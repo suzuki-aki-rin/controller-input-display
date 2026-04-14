@@ -3,7 +3,7 @@ from typing import Callable
 
 from input_logger import InputLogger
 from outputters.terminal import format_line
-from constants import FRAME_SEC
+from core.constants import FRAME_SEC
 from core.device import ControllerState
 
 #  SECTION:=============================================================

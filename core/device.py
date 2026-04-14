@@ -1,7 +1,7 @@
 from asyncio import CancelledError
 import evdev
 from evdev import InputDevice, ecodes
-from constants import (
+from core.constants import (
     BTN_MAP,
     DEFAULT_DEVICE_NAME,
     HAT_MAP,

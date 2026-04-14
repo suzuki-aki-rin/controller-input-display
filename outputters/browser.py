@@ -4,7 +4,7 @@ import json
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
 
-from constants import NUMPAD, ARROW
+from core.constants import NUMPAD, ARROW
 
 
 app = FastAPI()

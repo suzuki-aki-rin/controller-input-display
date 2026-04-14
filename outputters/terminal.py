@@ -1,5 +1,5 @@
 from collections import deque
-from constants import NUMPAD, ARROW, HISTORY_SIZE
+from core.constants import NUMPAD, ARROW, HISTORY_SIZE
 
 history: deque[str] = deque(maxlen=HISTORY_SIZE)
 

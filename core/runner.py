@@ -3,7 +3,7 @@ import asyncio
 from core.poll_loop import poll_loop
 from core.device import find_device, event_reader, ControllerState
 
-from constants import DEFAULT_DEVICE_NAME
+from core.constants import DEFAULT_DEVICE_NAME
 from input_logger import InputLogger
 
 #  SECTION:=============================================================

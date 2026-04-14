@@ -9,20 +9,20 @@
     background: #1a1a1a;
     color: #e0e0e0;
     font-family: monospace;
-    font-size: 15px;
+    font-size: 24px;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    padding: 1.5rem;
+    padding: .3rem;
     gap: 0;
   }
   .entry {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 5px;
     padding: 3px 0;
-    border-bottom: 1px solid #2a2a2a;
-    width: 280px;
+    <!-- border-bottom: 1px solid #2a2a2a; -->
+    width: 180px;
   }
   .entry.live {
     color: #fff;
@@ -30,21 +30,22 @@
     margin-bottom: 4px;
   }
   .frames {
-    width: 36px;
+    width: 32px;
     text-align: right;
-    color: #888;
+    color: #fff;
     flex-shrink: 0;
   }
   .entry.live .frames { color: #ccc; }
   .arrow {
     width: 24px;
     text-align: center;
-    font-size: 18px;
+    font-size: 24px;
     flex-shrink: 0;
+    margin: 0 8px;
   }
   .btns { display: flex; gap: 4px; flex-wrap: wrap; }
   .btn {
-    font-size: 11px;
+    font-size: 18px;
     font-weight: bold;
     padding: 1px 6px;
     border-radius: 3px;
@@ -78,7 +79,7 @@
 <div class="status" id="status">connecting...</div>
 
 <script>
-const HISTORY_SIZE = 10;
+const HISTORY_SIZE = 30;
 const history = [];
 
 function btnsHtml(btns) {

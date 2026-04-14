@@ -1,4 +1,19 @@
 from evdev import ecodes
+from pathlib import Path
+
+#  SECTION:=============================================================
+#            Logger
+#  =====================================================================
+import logging
+
+logger = logging.getLogger(__name__)
+logger.addHandler(logging.NullHandler())
+
+
+GUI_FONT = Path("~/.local/share/fonts/Cica_v5.0.3/Cica-Bold.ttf").expanduser()
+if not GUI_FONT.exists():
+    logger.error("font:GUI_FONT does not exists")
+
 
 DEFAULT_DEVICE_NAME = "Microsoft X-Box 360 pad"
 FRAME_SEC = 1 / 60

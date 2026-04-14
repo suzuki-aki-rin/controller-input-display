@@ -2,7 +2,7 @@ import argparse
 import asyncio
 
 from core.runner import run
-
+from outputters.gui_dearpygui import gui_loop
 
 #  SECTION:=============================================================
 #            Main Logger
@@ -45,10 +45,14 @@ def main():
     args = parser.parse_args()
 
     #  -------- Entry point ----------------------------------------------------------------
-    try:
-        asyncio.run(run(args))
-    except KeyboardInterrupt:
-        logger.info("app is stopped by KeyboardInterrupt")
+    #
+    if args.outputter == "gui":
+        gui_loop(args)
+    else:
+        try:
+            asyncio.run(run(args))
+        except KeyboardInterrupt:
+            logger.info("app is stopped by KeyboardInterrupt")
 
 
 if __name__ == "__main__":

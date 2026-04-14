@@ -1,4 +1,5 @@
 import asyncio
+from typing import Callable
 
 from core.poll_loop import poll_loop
 from core.device import find_device, event_reader, ControllerState
@@ -15,7 +16,9 @@ logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
 
-async def run(args):
+async def run(
+    args, on_update: Callable | None = None, on_frame: Callable | None = None
+):
     #  -------- Set file logger if commnadline argument exist. -------------------------
 
     filelogger = None
@@ -55,8 +58,10 @@ async def run(args):
             import uvicorn
 
             on_update, on_frame = make_browser_outputter()
-            print("Open http://localhost:8000 in your browser\n")
+            logger.info("Open http://localhost:8000 in your browser\n")
 
+        case "gui":
+            logger.info("gui is going to start")
         case _:
             logger.error("outputter: %s not found", args.outputter)
             raise SystemExit

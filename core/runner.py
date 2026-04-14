@@ -73,7 +73,10 @@ async def run(
             # poll_loop read controller state per frame (1/60sec)
             tg.create_task(
                 poll_loop(
-                    state, on_update=on_update, on_frame=on_frame, filelog=filelogger
+                    state=state,
+                    on_update=on_update,
+                    on_frame=on_frame,
+                    filelog=filelogger,
                 )
             )
             if args.outputter == "browser":

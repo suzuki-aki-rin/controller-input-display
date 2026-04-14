@@ -26,12 +26,16 @@ async def poll_loop(
     prev_dirs: set[str] = set()
     prev_btns: set[str] = set()
     hold = 0
+    next_tick = asyncio.get_event_loop().time()
 
     logger.debug("poll_loop starts")
 
     try:
         while True:
-            await asyncio.sleep(FRAME_SEC)
+            next_tick += FRAME_SEC
+            sleep = next_tick - asyncio.get_event_loop().time()
+            if sleep > 0:
+                await asyncio.sleep(sleep)
 
             cur_dirs = set(state.dirs)
             cur_btns = set(state.btns)

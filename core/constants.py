@@ -10,14 +10,21 @@ logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
 
+#  -------- User config ----------------------------------------------------------------
+
+LOG_LEVEL = logging.ERROR
+
 GUI_FONT = Path("~/.local/share/fonts/Cica_v5.0.3/Cica-Bold.ttf").expanduser()
 if not GUI_FONT.exists():
     logger.error("font:GUI_FONT does not exists")
 
-
 DEFAULT_DEVICE_NAME = "Microsoft X-Box 360 pad"
+HISTORY_SIZE = 30
+
+
+#  -------- Constants -------------------------------------------------------------------
+
 FRAME_SEC = 1 / 60
-HISTORY_SIZE = 10
 TRIGGER_THRESHOLD = 64
 
 NUMPAD = {
@@ -53,8 +60,12 @@ BTN_MAP = {
     ecodes.BTN_TR: "RB",
     ecodes.BTN_TL2: "LT",
     ecodes.BTN_TR2: "RT",
+    ecodes.BTN_TR2: "RT",
+    ecodes.BTN_THUMBL: "L3",
+    ecodes.BTN_THUMBR: "R3",
     ecodes.BTN_START: "START",
     ecodes.BTN_SELECT: "BACK",
+    ecodes.BTN_MODE: "MODE",
 }
 
 HAT_MAP = {

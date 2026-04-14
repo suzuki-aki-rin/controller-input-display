@@ -2,6 +2,7 @@ import argparse
 import asyncio
 
 from core.runner import run
+from core.constants import LOG_LEVEL
 from outputters.gui_dearpygui import gui_loop
 
 #  SECTION:=============================================================
@@ -9,9 +10,9 @@ from outputters.gui_dearpygui import gui_loop
 #  =====================================================================
 import logging
 
+log_level = LOG_LEVEL if LOG_LEVEL else logging.INFO
 logging.basicConfig(
-    # level=logging.INFO,
-    level=logging.DEBUG,
+    level=log_level,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger(__name__)
@@ -38,7 +39,7 @@ def main():
     )
     parser.add_argument(
         "--outputter",
-        help="select outputter: terminal, browswer",
+        help="select outputter: terminal, browswer, gui",
         type=str,
         default="terminal",
     )

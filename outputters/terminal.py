@@ -28,7 +28,7 @@ def redraw(live_line: str, history: deque[str]):
         print(f"\r{'':<40}")
 
 
-def make_terminal_outputter(log: InputLogger):
+def make_terminal_outputter(log: InputLogger | None):
     def on_update(hold, dirs, btns):
         line = format_line(hold, dirs, btns)
         history.appendleft(line)

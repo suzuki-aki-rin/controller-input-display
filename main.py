@@ -44,13 +44,22 @@ async def run(args):
     state = ControllerState()
 
     # Select outputter and asign on_update and on_frame to display input history
-    if args.outputter is None or args.outputter == "terminal":
-        from outputters.terminal import make_terminal_outputter
+    match args.outputter:
+        case "terminal" | None:
+            from outputters.terminal import make_terminal_outputter, reserve_display
 
-        on_update, on_frame = make_terminal_outputter(filelogger)
-    else:
-        logger.error("No outputter for %s", args.outputter)
-        raise SystemExit
+            on_update, on_frame = make_terminal_outputter(filelogger)
+            reserve_display()
+        case "browser":
+            from outputters.browser import app as fastapi_app, make_browser_outputter
+            import uvicorn
+
+            on_update, on_frame = make_browser_outputter()
+            print("Open http://localhost:8000 in your browser\n")
+
+        case _:
+            logger.error("outputter: %s not found", args.outputter)
+            raise SystemExit
 
     try:
         async with asyncio.TaskGroup() as tg:
@@ -58,6 +67,12 @@ async def run(args):
             tg.create_task(event_reader(device, state))
             # poll_loop read controller state per frame (1/60sec)
             tg.create_task(poll_loop(state, on_update=on_update, on_frame=on_frame))
+            if args.outputter == "browser":
+                config = uvicorn.Config(
+                    fastapi_app, host="0.0.0.0", port=8000, log_level="warning"
+                )
+                server = uvicorn.Server(config)
+                tg.create_task(server.serve())
     except* asyncio.CancelledError:
         # except* expands ExceptionGroup
         # ExceptionGroup happens, then all group tasks are cancelled

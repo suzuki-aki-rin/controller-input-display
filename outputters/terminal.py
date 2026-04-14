@@ -40,6 +40,3 @@ def make_terminal_outputter(log: InputLogger | None):
         redraw(live_line, history)
 
     return on_update, on_frame
-
-
-reserve_display()

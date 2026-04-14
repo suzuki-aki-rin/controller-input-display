@@ -25,7 +25,12 @@ async def run(args):
 
     filelogger = None
     if args.logfile:
-        filelogger = InputLogger(args.logfile)
+        try:
+            filelogger = InputLogger(args.logfile)
+        except Exception:
+            logger.exception("Bad logfile is specified.")
+            raise SystemExit
+
         logger.info("Log file: %s", args.logfile)
 
     #  ---------- Detect device ----------------------------------------
@@ -48,7 +53,7 @@ async def run(args):
         case "terminal" | None:
             from outputters.terminal import make_terminal_outputter, reserve_display
 
-            on_update, on_frame = make_terminal_outputter(filelogger)
+            on_update, on_frame = make_terminal_outputter()
             reserve_display()
         case "browser":
             from outputters.browser import app as fastapi_app, make_browser_outputter
@@ -66,12 +71,20 @@ async def run(args):
             # event_reader catches controller events
             tg.create_task(event_reader(device, state))
             # poll_loop read controller state per frame (1/60sec)
-            tg.create_task(poll_loop(state, on_update=on_update, on_frame=on_frame))
-            if args.outputter == "browser":
-                config = uvicorn.Config(
-                    fastapi_app, host="0.0.0.0", port=8000, log_level="warning"
+            tg.create_task(
+                poll_loop(
+                    state, on_update=on_update, on_frame=on_frame, filelog=filelogger
                 )
-                server = uvicorn.Server(config)
+            )
+            if args.outputter == "browser":
+                try:
+                    config = uvicorn.Config(
+                        fastapi_app, host="0.0.0.0", port=8000, log_level="warning"
+                    )
+                    server = uvicorn.Server(config)
+                except Exception:
+                    logger.exception("uvicorn is not loaded properly")
+                    raise SystemExit
                 tg.create_task(server.serve())
     except* asyncio.CancelledError:
         # except* expands ExceptionGroup

@@ -1,6 +1,8 @@
 import asyncio
 from typing import Callable
 
+from input_logger import InputLogger
+from outputters.terminal import format_line
 from constants import FRAME_SEC
 from core.device import ControllerState
 
@@ -13,7 +15,12 @@ logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
 
-async def poll_loop(state: ControllerState, on_update: Callable, on_frame: Callable):
+async def poll_loop(
+    state: ControllerState,
+    on_update: Callable,
+    on_frame: Callable,
+    filelog: InputLogger | None,
+):
     """
     on_update is a callback when conroller input state is change.
     on_frame is a callback called every frame.
@@ -44,6 +51,11 @@ async def poll_loop(state: ControllerState, on_update: Callable, on_frame: Calla
                 # send previous input elements to on_update()
                 on_update(hold - 1, prev_dirs, prev_btns)
 
+                # file log
+                if filelog:
+                    line = format_line(hold, prev_dirs, prev_btns)
+                    filelog.write(line)
+
                 # update input elements
                 hold = 1
                 prev_dirs = cur_dirs
@@ -56,4 +68,6 @@ async def poll_loop(state: ControllerState, on_update: Callable, on_frame: Calla
     finally:
         # force live input to prevoius input
         # If no on_update() here, live input just before task is cancelled is not logged.
-        on_update(hold - 1, prev_dirs, prev_btns)
+        if filelog:
+            line = format_line(hold, cur_dirs, cur_btns)
+            filelog.write(line)

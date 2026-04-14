@@ -1,6 +1,5 @@
 from collections import deque
 from constants import NUMPAD, ARROW, HISTORY_SIZE
-from input_logger import InputLogger
 
 history: deque[str] = deque(maxlen=HISTORY_SIZE)
 
@@ -28,12 +27,10 @@ def redraw(live_line: str, history: deque[str]):
         print(f"\r{'':<40}")
 
 
-def make_terminal_outputter(log: InputLogger | None):
+def make_terminal_outputter():
     def on_update(hold, dirs, btns):
         line = format_line(hold, dirs, btns)
         history.appendleft(line)
-        if log:
-            log.write(line)
 
     def on_frame(hold, dirs, btns):
         live_line = format_line(hold, dirs, btns)

@@ -20,6 +20,8 @@ async def poll_loop(state: ControllerState, on_update: Callable, on_frame: Calla
     """
     prev_dirs: set[str] = set()
     prev_btns: set[str] = set()
+    cur_dirs: set[str] = set()
+    cur_btns: set[str] = set()
     hold = 0
     next_tick = asyncio.get_event_loop().time()
 
@@ -51,3 +53,7 @@ async def poll_loop(state: ControllerState, on_update: Callable, on_frame: Calla
             on_frame(hold, cur_dirs, cur_btns)
     except asyncio.CancelledError:
         logger.debug("polling is cancelled.")
+    finally:
+        # force live input to prevoius input
+        # If no on_update() here, live input just before task is cancelled is not logged.
+        on_update(hold - 1, prev_dirs, prev_btns)

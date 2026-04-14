@@ -32,8 +32,8 @@ ARROW = {
 BTN_MAP = {
     ecodes.BTN_SOUTH: "A",
     ecodes.BTN_EAST: "B",
-    ecodes.BTN_NORTH: "Y",
-    ecodes.BTN_WEST: "X",
+    ecodes.BTN_NORTH: "X",
+    ecodes.BTN_WEST: "Y",
     ecodes.BTN_TL: "LB",
     ecodes.BTN_TR: "RB",
     ecodes.BTN_TL2: "LT",

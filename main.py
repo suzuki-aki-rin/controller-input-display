@@ -23,22 +23,27 @@ logger = logging.getLogger(__name__)
 def main():
     #  -------- ArgumentParser -------------------------------------------------------------
 
-    parser = argparse.ArgumentParser(prog="PROG", usage="%(prog)s [options]")
+    parser = argparse.ArgumentParser(
+        description="displays gamepad input history",
+        prog="python main.py",
+        usage="%(prog)s [options]",
+    )
     parser.add_argument(
         "--logfile",
-        help="logfile name. if none, logfile is not created.",
+        help="log file name. if none, log file is not created.",
         type=str,
         default=None,
     )
     parser.add_argument(
         "--device-name",
-        help="device name. see evtest or something. if none, default device name is used.",
+        help="device name. partial name is okay like Microsoft but case-sensitive. \
+        To know device names see evtest or something. if none, default device name is used.",
         type=str,
         default=DEFAULT_DEVICE_NAME,
     )
     parser.add_argument(
         "--outputter",
-        help="select outputter: terminal, browswer, gui",
+        help="select outputter: terminal, browswer, gui. if none, terminal",
         type=str,
         default="terminal",
     )

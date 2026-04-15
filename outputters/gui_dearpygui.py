@@ -10,6 +10,7 @@ from core.runner import run
 from config import HISTORY_SIZE, GUI_FONT, GUI_FONT_SIZE, GUI_WIDTH, GUI_HEIGHT
 
 
+# Use queue, thread-safe, for between threads: gui loop and run(event_reader and poll_loop)
 _queue: queue.Queue = queue.Queue()
 
 

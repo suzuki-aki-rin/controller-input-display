@@ -7,7 +7,7 @@ import dearpygui.dearpygui as dpg
 
 from core.constants import NUMPAD, ARROW
 from core.runner import run
-from config import HISTORY_SIZE, GUI_FONT
+from config import HISTORY_SIZE, GUI_FONT, GUI_FONT_SIZE, GUI_WIDTH, GUI_HEIGHT
 
 
 _queue: queue.Queue = queue.Queue()
@@ -38,14 +38,14 @@ def gui_loop(args):
     dpg.create_context()
 
     with dpg.font_registry():
-        with dpg.font(str(GUI_FONT), 32) as default_font:
+        with dpg.font(str(GUI_FONT), GUI_FONT_SIZE) as default_font:
             dpg.add_font_range_hint(dpg.mvFontRangeHint_Default)
             # add Unicode range that covers arrows (0x2190-0x21FF)
             dpg.add_font_range(0x2190, 0x21FF)
 
     dpg.bind_font(default_font)
 
-    dpg.create_viewport(title="Input History", width=360, height=500)
+    dpg.create_viewport(title="Input History", width=GUI_WIDTH, height=GUI_HEIGHT)
     # add font before setup
 
     dpg.setup_dearpygui()
@@ -78,7 +78,7 @@ def gui_loop(args):
     t = threading.Thread(target=asyncio_thread, daemon=True)
     t.start()
 
-    dpg.set_value("status", f"device: {args.device_name or 'xbox/microsoft'}")
+    dpg.set_value("status", f"{args.device_name}")
 
     while dpg.is_dearpygui_running():
         while not _queue.empty():

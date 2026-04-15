@@ -39,9 +39,10 @@ options:
 ```bash
 # if needed
 python -m venv venv
-# install libraries. 
+source venv/bin/activate
+# install libraries.
 pip install -r requirements.txt
-# Or install libraries needed.
+# Or install only libraries needed. For example, "browser" outputter.
 # pip install evdev uvicorn websockets
 
 # Run

@@ -3,11 +3,11 @@ import evdev
 from evdev import InputDevice, ecodes
 from core.constants import (
     BTN_MAP,
-    DEFAULT_DEVICE_NAME,
     HAT_MAP,
     TRIGGER_MAP,
     TRIGGER_THRESHOLD,
 )
+from config import DEFAULT_DEVICE_NAME
 
 #  SECTION:=============================================================
 #            Logger

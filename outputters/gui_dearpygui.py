@@ -5,8 +5,9 @@ from collections import deque
 
 import dearpygui.dearpygui as dpg
 
-from core.constants import HISTORY_SIZE, NUMPAD, ARROW, GUI_FONT
+from core.constants import NUMPAD, ARROW, GUI_FONT
 from core.runner import run
+from config import HISTORY_SIZE
 
 
 _queue: queue.Queue = queue.Queue()

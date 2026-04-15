@@ -2,7 +2,7 @@ import argparse
 import asyncio
 
 from core.runner import run
-from core.constants import LOG_LEVEL
+from config import LOG_LEVEL, DEFAULT_DEVICE_NAME
 
 #  SECTION:=============================================================
 #            Main Logger
@@ -34,7 +34,7 @@ def main():
         "--device-name",
         help="device name. see evtest or something. if none, default device name is used.",
         type=str,
-        default=None,
+        default=DEFAULT_DEVICE_NAME,
     )
     parser.add_argument(
         "--outputter",

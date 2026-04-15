@@ -4,7 +4,6 @@ from typing import Callable
 from core.poll_loop import poll_loop
 from core.device import find_device, event_reader, ControllerState
 
-from core.constants import DEFAULT_DEVICE_NAME
 from input_logger import InputLogger
 
 #  SECTION:=============================================================
@@ -37,8 +36,6 @@ async def run(
     if not device:
         if args.device_name:
             logger.error("argument device: %s not found.", args.device_name)
-        else:
-            logger.error("default device: %s not found.", DEFAULT_DEVICE_NAME)
         raise SystemExit()
 
     logger.info("Logging: %s", device.name)

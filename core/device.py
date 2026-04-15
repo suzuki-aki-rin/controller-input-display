@@ -45,9 +45,7 @@ class ControllerState:
                 ) if event.value > TRIGGER_THRESHOLD else self.btns.discard(name)
 
 
-def find_device(dev_name: str | None = None) -> InputDevice | None:
-    if dev_name is None:
-        dev_name = DEFAULT_DEVICE_NAME
+def find_device(dev_name: str) -> InputDevice | None:
     for path in evdev.list_devices():
         dev = InputDevice(path)
         if dev_name in dev.name:

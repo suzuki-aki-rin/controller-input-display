@@ -3,7 +3,6 @@ import asyncio
 
 from core.runner import run
 from core.constants import LOG_LEVEL
-from outputters.gui_dearpygui import gui_loop
 
 #  SECTION:=============================================================
 #            Main Logger
@@ -48,6 +47,8 @@ def main():
     #  -------- Entry point ----------------------------------------------------------------
     #
     if args.outputter == "gui":
+        from outputters.gui_dearpygui import gui_loop
+
         gui_loop(args)
     else:
         try:

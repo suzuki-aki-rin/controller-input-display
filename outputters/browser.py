@@ -6,6 +6,14 @@ from fastapi.responses import FileResponse
 
 from core.constants import NUMPAD, ARROW
 
+#  =====================================================================
+#            Logger
+#  =====================================================================
+import logging
+
+logger = logging.getLogger(__name__)
+logger.addHandler(logging.NullHandler())
+
 
 app = FastAPI()
 _queue: asyncio.Queue = asyncio.Queue()
@@ -26,6 +34,7 @@ def make_browser_outputter():
         payload = format_payload(hold, dirs, btns)
         payload["type"] = "update"
         _queue.put_nowait(payload)
+        logger.debug("Que is updated")
 
     def on_frame(hold: int, dirs: set[str], btns: set[str]):
         payload = format_payload(hold, dirs, btns)
@@ -43,9 +52,12 @@ async def index():
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
+    logger.debug("websocket is connected")
     try:
         while True:
             payload = await _queue.get()
+            logger.debug("server recieved new queue")
             await websocket.send_text(json.dumps(payload))
+            logger.debug("input is sent to browser via websocket")
     except WebSocketDisconnect:
-        pass
+        logger.debug("websocket is disconnected")

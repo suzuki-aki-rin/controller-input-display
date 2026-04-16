@@ -7,7 +7,6 @@ from core.constants import (
     TRIGGER_MAP,
     TRIGGER_THRESHOLD,
 )
-from config import DEFAULT_DEVICE_NAME
 
 #  SECTION:=============================================================
 #            Logger

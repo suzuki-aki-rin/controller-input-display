@@ -55,7 +55,7 @@ async def run(
             import uvicorn
 
             on_update, on_frame = make_browser_outputter()
-            logger.info("Open http://localhost:8000 in your browser\n")
+            logger.info("Open http://localhost:%s in your browser\n", args.port)
 
         case "gui":
             logger.info("gui is going to start")
@@ -79,7 +79,10 @@ async def run(
             if args.outputter == "browser":
                 try:
                     config = uvicorn.Config(
-                        fastapi_app, host="0.0.0.0", port=8000, log_level="warning"
+                        fastapi_app,
+                        host="0.0.0.0",
+                        port=args.port,
+                        log_level=args.loglevel,
                     )
                     server = uvicorn.Server(config)
                 except Exception:

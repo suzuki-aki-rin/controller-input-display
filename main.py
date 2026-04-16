@@ -14,7 +14,8 @@ def main():
     #  -------- ArgumentParser -------------------------------------------------------------
 
     parser = argparse.ArgumentParser(
-        description="displays gamepad input history",
+        description="displays gamepad input history.\nModify config.py to change default values.",
+        formatter_class=argparse.RawTextHelpFormatter,
         prog="python main.py",
         usage="%(prog)s [options]",
     )
@@ -26,9 +27,8 @@ def main():
     )
     parser.add_argument(
         "--device-name",
-        help="device name. partial name is okay like Microsoft but case-sensitive. \
-        To know device names see evtest or something. if none, default device name \
-        in config.py is used.",
+        help="device name. partial name is okay like Microsoft but case-sensitive.\n\
+To know device names see evtest or something.",
         type=str,
         default=DEVICE_NAME if DEVICE_NAME else "X-Box",
     )

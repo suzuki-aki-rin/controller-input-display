@@ -24,16 +24,19 @@ pip install dearpygui
 $python main.py --help
 usage: python main.py [options]
 
-displays gamepad input history
+displays gamepad input history.
+Modify config.py to change default values.
 
 options:
   -h, --help            show this help message and exit
   --logfile LOGFILE     log file name. if none, log file is not created.
   --device-name DEVICE_NAME
-                        device name. partial name is okay like Microsoft but case-sensitive. To know device names see evtest or something. if none,
-                        default device name is used.
+                        device name. partial name is okay like Microsoft but case-sensitive.
+                        To know device names see evtest or something.
   --outputter OUTPUTTER
                         select outputter: terminal, browswer, gui. if none, terminal
+  --loglevel LOGLEVEL   loglevel: set info, warning,debug or something
+  --port PORT           browser port. that is used for web browser outputter
 ```
 
 ```bash

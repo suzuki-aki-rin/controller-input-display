@@ -1,10 +1,23 @@
 import argparse
 import asyncio
+import logging
+from pathlib import Path
+
+from config import (
+    HISTORY_SIZE,
+    LOG_LEVEL,
+    DEVICE_NAME,
+    BROWSER_PORT,
+    OUTPUTTER,
+    LOGFILE_PATH,
+)
 
 from core.runner import run
-from config import LOG_LEVEL, DEVICE_NAME, BROWSER_PORT, OUTPUTTER
+from outputters.terminal import TerminalOutputter
+from outputters.browser import make_browser_outputter
 
-import logging
+from outputters.browser import app as fastapi_app
+import uvicorn
 
 
 #  SECTION:=============================================================
@@ -65,6 +78,7 @@ To know device names see evtest or something.",
     args = parser.parse_args()
 
     #  -------- logger ------------------------------------------------------------------
+
     loglevel = args.loglevel
     numeric_level = getattr(logging, loglevel.upper(), None)
     if not isinstance(numeric_level, int):
@@ -79,10 +93,48 @@ To know device names see evtest or something.",
     #  -------- validate arguments ------------------------------------------------------
     outputters = ("terminal", "browser", "gui")
     if args.outputter not in outputters:
-        raise ValueError("In valid outputter. select from : %s" % str(outputters))
+        raise ValueError("Invalid outputter. select from : %s" % str(outputters))
+
+    logfile = args.logfile if args.logfile else LOGFILE_PATH
+
+    if logfile and not Path(logfile).exists():
+        raise FileExistsError("Invalid logfile path: %s" % str(logfile))
+
+    logfile = Path(logfile) if logfile else None
 
     #  -------- Entry point ----------------------------------------------------------------
-    #
+
+    if args.outputter == "terminal" or not args.outputter:
+        terminal_outputter = TerminalOutputter(history_size=HISTORY_SIZE)
+        on_update = terminal_outputter.on_update
+        on_frame = terminal_outputter.on_frame
+        terminal_outputter.reserve_display()
+    elif args.output == "browser":
+        on_update, on_frame = make_browser_outputter()
+        # send history size to fastapi_app
+        fastapi_app.state.history_size = args.history_size
+        try:
+            config = uvicorn.Config(
+                fastapi_app,
+                host=args.host,
+                port=args.port,
+                log_level=args.loglevel,
+            )
+            server = uvicorn.Server(config)
+        except Exception:
+            logger.exception("uvicorn is not loaded properly")
+            raise SystemExit
+        asyncio.create_task(server.serve())
+
+    asyncio.run(
+        run(
+            device_name=args.device_name,
+            on_frame=on_frame,
+            on_update=on_update,
+            logfile=logfile,
+        )
+    )
+
     if args.outputter == "gui":
         from outputters.gui_dearpygui import gui_loop
 

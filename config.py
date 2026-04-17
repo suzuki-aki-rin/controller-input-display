@@ -16,6 +16,7 @@ DEVICE_NAME = "Microsoft X-Box 360 pad"
 HISTORY_SIZE = 30
 OUTPUTTER = "terminal"
 BROWSER_PORT = 8100
+LOGFILE_PATH = ""
 
 GUI_FONT = Path("~/.local/share/fonts/Cica_v5.0.3/Cica-Bold.ttf").expanduser()
 if not GUI_FONT.exists():

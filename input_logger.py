@@ -1,6 +1,9 @@
+from pathlib import Path
+
+
 class InputLogger:
-    def __init__(self, path: str):
-        self._file = open(path, 'w')
+    def __init__(self, path: Path):
+        self._file = open(path, "w")
 
     def write(self, line: str):
         self._file.write(line + "\n")

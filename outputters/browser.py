@@ -1,8 +1,8 @@
 import asyncio
 import json
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from fastapi.responses import FileResponse
+from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
+from fastapi.templating import Jinja2Templates
 
 from core.constants import NUMPAD, ARROW
 
@@ -15,7 +15,10 @@ logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
 
+templates = Jinja2Templates(directory="outputters/templates")
 app = FastAPI()
+
+# for recieving and sending data
 _queue: asyncio.Queue = asyncio.Queue()
 
 
@@ -45,8 +48,16 @@ def make_browser_outputter():
 
 
 @app.get("/")
-async def index():
-    return FileResponse("outputters/index.html")
+async def index(request: Request):
+    # Send main loop variables, history_size and server url(changed to ws_url) to html template
+    ws_url = str(request.base_url).replace("http", "ws", 1) + "ws"
+    history_size = request.app.state.history_size
+
+    return templates.TemplateResponse(
+        request=request,
+        name="index.html",
+        context={"ws_url": ws_url, "history_size": history_size},
+    )
 
 
 @app.websocket("/ws")

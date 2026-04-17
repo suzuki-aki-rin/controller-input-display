@@ -79,7 +79,7 @@
 <div class="status" id="status">connecting...</div>
 
 <script>
-const HISTORY_SIZE = 30;
+const HISTORY_SIZE = {{ history_size }};
 const history = [];
 
 function btnsHtml(btns) {
@@ -97,7 +97,8 @@ function renderHistory() {
   ).join('');
 }
 
-const ws = new WebSocket(`ws://${window.location.host}/ws`);
+const ws = new WebSocket("{{ ws_url }}");
+console.log(ws.name);
 
 ws.onopen = () => {
   document.getElementById('status').textContent = 'connected';

@@ -14,7 +14,7 @@ libraries: see requirements.txt
 pip install evdev
 
 1. outputter: browser
-pip install uvicorn websockets
+pip install uvicorn websockets jinja2
 1. outputter: gui
 pip install dearpygui
 

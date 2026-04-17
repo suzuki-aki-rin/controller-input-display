@@ -55,7 +55,6 @@ async def run(
             import uvicorn
 
             on_update, on_frame = make_browser_outputter()
-            logger.info("Open http://localhost:%s in your browser\n", args.port)
 
         case "gui":
             logger.info("gui is going to start")
@@ -77,10 +76,12 @@ async def run(
                 )
             )
             if args.outputter == "browser":
+                # send history size to fastapi_app
+                fastapi_app.state.history_size = args.history_size
                 try:
                     config = uvicorn.Config(
                         fastapi_app,
-                        host="0.0.0.0",
+                        host=args.host,
                         port=args.port,
                         log_level=args.loglevel,
                     )

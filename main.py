@@ -45,10 +45,22 @@ To know device names see evtest or something.",
         default=LOG_LEVEL if LOG_LEVEL else "info",
     )
     parser.add_argument(
-        "--port",
-        help="browser port. that is used for web browser outputter",
+        "--history-size",
+        help="line number of input display",
         type=str,
-        default=BROWSER_PORT if BROWSER_PORT else 8000,
+        default=30,
+    )
+    parser.add_argument(
+        "--host",
+        help="host for browswer outputter.",
+        type=str,
+        default="0.0.0.0",
+    )
+    parser.add_argument(
+        "--port",
+        help="port for browser outputter.",
+        type=str,
+        default=8000,
     )
     args = parser.parse_args()
 

@@ -106,13 +106,13 @@ def main():
     logfile = Path(logfile) if logfile else None
 
     #  -------- Entry point ----------------------------------------------------------------
-
+    extra_task = None
     if args.outputter == "terminal" or not args.outputter:
         terminal_outputter = TerminalOutputter(history_size=HISTORY_SIZE)
         on_update = terminal_outputter.on_update
         on_frame = terminal_outputter.on_frame
         terminal_outputter.reserve_display()
-    elif args.output == "browser":
+    elif args.outputter == "browser":
         on_update, on_frame = make_browser_outputter()
         # send history size to fastapi_app
         fastapi_app.state.history_size = args.history_size
@@ -124,10 +124,10 @@ def main():
                 log_level=args.loglevel,
             )
             server = uvicorn.Server(config)
+            extra_task = server.serve
         except Exception:
             logger.exception("uvicorn is not loaded properly")
             raise SystemExit
-        asyncio.create_task(server.serve())
 
     asyncio.run(
         run(
@@ -135,6 +135,7 @@ def main():
             on_frame=on_frame,
             on_update=on_update,
             logfile=logfile,
+            extra_task=extra_task,
         )
     )
 

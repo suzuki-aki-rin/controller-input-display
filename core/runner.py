@@ -22,6 +22,7 @@ async def run(
     on_update: Callable,
     on_frame: Callable,
     logfile: Path | None = None,
+    extra_task: Callable | None = None,
 ):
     #  -------- Set file logger if commnadline argument exist. -------------------------
 
@@ -61,6 +62,8 @@ async def run(
                     filelog=filelogger,
                 )
             )
+            if extra_task:
+                tg.create_task(extra_task())
             # if args.outputter == "browser":
             #     # send history size to fastapi_app
             #     fastapi_app.state.history_size = args.history_size

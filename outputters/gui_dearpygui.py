@@ -39,7 +39,7 @@ def gui_loop(args):
     dpg.create_context()
 
     with dpg.font_registry():
-        with dpg.font(str(GUI_FONT), GUI_FONT_SIZE) as default_font:
+        with dpg.font(GUI_FONT, GUI_FONT_SIZE) as default_font:
             dpg.add_font_range_hint(dpg.mvFontRangeHint_Default)
             # add Unicode range that covers arrows (0x2190-0x21FF)
             dpg.add_font_range(0x2190, 0x21FF)

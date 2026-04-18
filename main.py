@@ -129,25 +129,27 @@ def main():
             logger.exception("uvicorn is not loaded properly")
             raise SystemExit
 
-    asyncio.run(
-        run(
-            device_name=args.device_name,
-            on_frame=on_frame,
-            on_update=on_update,
-            logfile=logfile,
-            extra_task=extra_task,
-        )
-    )
-
-    if args.outputter == "gui":
+    elif args.outputter == "gui":
         from outputters.gui_dearpygui import gui_loop
 
         gui_loop(args)
+        return
     else:
-        try:
-            asyncio.run(run(args))
-        except KeyboardInterrupt:
-            logger.info("app is stopped by KeyboardInterrupt")
+        logger.error("bad outputter. exit")
+        raise SystemExit
+
+    try:
+        asyncio.run(
+            run(
+                device_name=args.device_name,
+                on_frame=on_frame,
+                on_update=on_update,
+                logfile=logfile,
+                extra_task=extra_task,
+            )
+        )
+    except KeyboardInterrupt:
+        logger.info("app is stopped by KeyboardInterrupt")
 
 
 if __name__ == "__main__":

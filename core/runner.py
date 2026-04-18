@@ -64,27 +64,11 @@ async def run(
             )
             if extra_task:
                 tg.create_task(extra_task())
-            # if args.outputter == "browser":
-            #     # send history size to fastapi_app
-            #     fastapi_app.state.history_size = args.history_size
-            #     try:
-            #         config = uvicorn.Config(
-            #             fastapi_app,
-            #             host=args.host,
-            #             port=args.port,
-            #             log_level=args.loglevel,
-            #         )
-            #         server = uvicorn.Server(config)
-            #     except Exception:
-            #         logger.exception("uvicorn is not loaded properly")
-            #         raise SystemExit
-            #     tg.create_task(server.serve())
     except* asyncio.CancelledError:
         # except* expands ExceptionGroup
         # ExceptionGroup happens, then all group tasks are cancelled
         # this raise asyncio.exceptions.CancelledError causes KeyboardInterrupt that asyncio.run() raises.
         # without this except*, it also causes KeyboardInterrupt that asyncio.run() raises.
-
         # logger.debug("task group(event_reader, poll_loop) is cancelled")
         raise asyncio.CancelledError
     finally:

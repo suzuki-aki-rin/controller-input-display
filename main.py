@@ -20,12 +20,7 @@ from outputters.browser import app as fastapi_app
 import uvicorn
 
 
-#  SECTION:=============================================================
-#            Main
-#  =====================================================================
-def main():
-    #  -------- ArgumentParser -------------------------------------------------------------
-
+def get_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="displays gamepad input history.\nModify config.py to change default values.",
         formatter_class=argparse.RawTextHelpFormatter,
@@ -75,7 +70,15 @@ To know device names see evtest or something.",
         type=str,
         default=8000,
     )
-    args = parser.parse_args()
+    return parser.parse_args()
+
+
+#  SECTION:=============================================================
+#            Main
+#  =====================================================================
+def main():
+    #  -------- ArgumentParser -------------------------------------------------------------
+    args: argparse.Namespace = get_args()
 
     #  -------- logger ------------------------------------------------------------------
 

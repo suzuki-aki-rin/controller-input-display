@@ -37,7 +37,6 @@ def main():
 
     #  -------- Entry point ----------------------------------------------------------------
     #  use for uvicorn of browser outputter or something else for the futrue.
-    extra_task = None
     if app_config.outputter == "terminal" or not app_config.outputter:
         terminal_outputter = TerminalOutputter(
             history_size=app_config.history_size,
@@ -52,26 +51,20 @@ def main():
         browser_outputter = BrowserOutputter(
             app=fastapi_app,
             history_size=app_config.history_size,
+            device_name=app_config.device_name,
             config=browser_config,
+            logfile=app_config.inputlog_path,
             log_level=app_config.log_level,
         )
-        on_update, on_frame = browser_outputter.make_on_update_and_on_frame()
-        # on_update = browser_outputter.on_update
-        # on_frame = browser_outputter.on_frame
+
+        on_update = browser_outputter.on_update
+        on_frame = browser_outputter.on_frame
         try:
-            import threading
-
-            extra_task = browser_outputter.create_server_task()
-
-            def async_task():
-                asyncio.run(extra_task())
-
-            t = threading.Thread(target=async_task, daemon=True)
-            t.start()
+            browser_outputter.start()
         except Exception:
-            pass
             logger.exception("server is not loaded properly")
             raise SystemExit
+        return
 
     elif app_config.outputter == "gui":
         gui_config: GuiConfig = app_config.outputters.gui

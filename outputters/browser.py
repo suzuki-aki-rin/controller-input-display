@@ -1,6 +1,7 @@
 import asyncio
 import json
-from typing import Callable
+from pathlib import Path
+import threading
 
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.templating import Jinja2Templates
@@ -8,6 +9,7 @@ import uvicorn
 
 from core.constants import NUMPAD, ARROW
 from core.config_loader import BrowserConfig
+from core.runner import run
 
 #  =====================================================================
 #            Logger
@@ -28,6 +30,8 @@ class BrowserOutputter:
         app: FastAPI,
         history_size: int,
         config: BrowserConfig,
+        device_name: str,
+        logfile: Path | None = None,
         log_level: str = "info",
     ) -> None:
         self.app = app
@@ -35,6 +39,8 @@ class BrowserOutputter:
         self.queue = asyncio.Queue()
         self.app.state.queue = self.queue
         self.app.state.history_size = history_size
+        self.device_name = device_name
+        self.logfile = logfile
         self.config = config
         self.log_level = log_level
 
@@ -47,29 +53,45 @@ class BrowserOutputter:
             "btns": sorted(btns),
         }
 
-    def make_on_update_and_on_frame(self) -> tuple[Callable, Callable]:
-        def on_update(hold: int, dirs: set[str], btns: set[str]):
-            payload = self.format_payload(hold, dirs, btns)
-            payload["type"] = "update"
-            self.queue.put_nowait(payload)
-            logger.debug("Que is updated")
+    def on_update(self, hold: int, dirs: set[str], btns: set[str]):
+        payload = self.format_payload(hold, dirs, btns)
+        payload["type"] = "update"
+        self.queue.put_nowait(payload)
+        logger.debug("Que is updated")
 
-        def on_frame(hold: int, dirs: set[str], btns: set[str]):
-            payload = self.format_payload(hold, dirs, btns)
-            payload["type"] = "frame"
-            self.queue.put_nowait(payload)
+    def on_frame(self, hold: int, dirs: set[str], btns: set[str]):
+        payload = self.format_payload(hold, dirs, btns)
+        payload["type"] = "frame"
+        self.queue.put_nowait(payload)
 
-        return on_update, on_frame
+    def start(self) -> None:
+        # config = uvicorn.Config(
+        #     self.app,
+        #     host=self.config.host,
+        #     port=self.config.port,
+        #     log_level=self.log_level,
+        # )
+        # server = uvicorn.Server(config)
+        # asyncio.run(server.serve())
+        def asyncio_thread():
+            asyncio.run(
+                run(
+                    device_name=self.device_name,
+                    on_frame=self.on_frame,
+                    on_update=self.on_update,
+                    logfile=self.logfile,
+                )
+            )
 
-    def create_server_task(self) -> Callable:
-        config = uvicorn.Config(
+        t = threading.Thread(target=asyncio_thread, daemon=True)
+        t.start()
+
+        uvicorn.run(
             self.app,
             host=self.config.host,
             port=self.config.port,
             log_level=self.log_level,
         )
-        server = uvicorn.Server(config)
-        return server.serve
 
 
 @app.get("/")

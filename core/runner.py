@@ -5,7 +5,7 @@ from pathlib import Path
 from core.poll_loop import poll_loop
 from core.device import find_device, event_reader, ControllerState
 
-from input_logger import InputLogger
+from core.input_logger import InputLogger
 
 
 #  SECTION:=============================================================
@@ -24,7 +24,7 @@ async def run(
     logfile: Path | None = None,
     extra_task: Callable | None = None,
 ):
-    #  -------- Set file logger if commnadline argument exist. -------------------------
+    #  -------- Set file logger if inputlog_path is set. -------------------------
 
     filelogger = None
     if logfile:

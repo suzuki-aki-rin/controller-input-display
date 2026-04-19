@@ -1,8 +1,8 @@
 import asyncio
 from typing import Callable
 
-from input_logger import InputLogger
 from outputters.terminal import format_line
+from core.input_logger import InputLogger
 from core.constants import FRAME_SEC
 from core.device import ControllerState
 

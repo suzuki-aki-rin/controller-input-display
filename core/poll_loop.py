@@ -19,7 +19,7 @@ async def poll_loop(
     state: ControllerState,
     on_update: Callable,
     on_frame: Callable,
-    filelog: InputLogger | None,
+    filelog: InputLogger | None = None,
     enable_liveline: bool = False,
 ):
     """
@@ -67,6 +67,7 @@ async def poll_loop(
                 on_frame(hold, cur_dirs, cur_btns)
     except asyncio.CancelledError:
         logger.debug("polling is cancelled.")
+        raise
     finally:
         # force live input to prevoius input
         # If no on_update() here, live input just before task is cancelled is not logged.

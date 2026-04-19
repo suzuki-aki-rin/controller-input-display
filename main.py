@@ -46,6 +46,7 @@ def main():
         on_update = terminal_outputter.on_update
         on_frame = terminal_outputter.on_frame
         terminal_outputter.reserve_display()
+
     elif app_config.outputter == "browser":
         browser_config: BrowserConfig = app_config.outputters.browser
         browser_outputter = BrowserOutputter(

@@ -97,6 +97,9 @@ async def websocket_endpoint(websocket: WebSocket):
             logger.debug("input is sent to browser via websocket")
     except WebSocketDisconnect:
         logger.debug("websocket is disconnected")
-    except KeyboardInterrupt:
+    except asyncio.CancelledError:
         logger.debug("KeyboardInterrupt : websocket is disconnected")
         raise
+    finally:
+        await websocket.close()
+        logger.debug("websocket is closed. websocket task is finished/canceled.")

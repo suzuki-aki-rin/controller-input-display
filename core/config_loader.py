@@ -47,20 +47,20 @@ def dict_to_toml_with_comments(data: dict, output_path: str) -> str:
 #  =====================================================================
 
 
-class Terminal(BaseModel):
+class TerminalConfig(BaseModel):
     """Config for terminal outputter"""
 
     pass
 
 
-class Browser(BaseModel):
+class BrowserConfig(BaseModel):
     """Config for browser outputter"""
 
     port: int = 8000
     host: str = "0.0.0.0"
 
 
-class Gui(BaseModel):
+class GuiConfig(BaseModel):
     """Config for gui outputter"""
 
     font_path: Path = Field(
@@ -82,12 +82,12 @@ class Gui(BaseModel):
 
 
 class Outputters(BaseModel):
-    terminal: Terminal = Field(default_factory=Terminal)
-    browser: Browser = Field(default_factory=Browser)
-    gui: Gui = Field(default_factory=Gui)
+    terminal: TerminalConfig = Field(default_factory=TerminalConfig)
+    browser: BrowserConfig = Field(default_factory=BrowserConfig)
+    gui: GuiConfig = Field(default_factory=GuiConfig)
 
 
-class Config(BaseSettings):
+class AppConfig(BaseSettings):
     """
     Displays pad input history. three outputters are available.
     Settings except for the commandline options is written in config.toml.
@@ -168,8 +168,8 @@ def main() -> None:
     logger = logging.getLogger(__name__)
 
     try:
-        Config.save_defaults_toml()
-        print(Config())
+        AppConfig.save_defaults_toml()
+        print(AppConfig())
     except ValueError as e:
         logger.error(e)
 

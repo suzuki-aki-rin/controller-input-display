@@ -59,3 +59,4 @@ async def event_reader(device: InputDevice, state: ControllerState):
             state.update(event)
     except CancelledError:
         logger.debug("event_reader is cancelled")
+        raise

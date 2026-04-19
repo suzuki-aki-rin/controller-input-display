@@ -7,7 +7,7 @@ from pathlib import Path
 
 import dearpygui.dearpygui as dpg
 
-from core.config_loader import Gui
+from core.config_loader import GuiConfig
 from core.constants import NUMPAD, ARROW
 from core.runner import run
 
@@ -22,11 +22,11 @@ def format_entry(hold: int, dirs: set[str], btns: set[str]) -> dict:
 
 
 class GUIOutputter:
-    def __init__(self, device_name: str, history_size: int, config: Gui) -> None:
+    def __init__(self, device_name: str, history_size: int, config: GuiConfig) -> None:
         self.device_name = device_name
         self.history_size: int = history_size
         self.history: deque[dict] = deque(maxlen=self.history_size)
-        self.config: Gui = config
+        self.config: GuiConfig = config
 
         # Use queue, thread-safe, for between threads: gui loop and run(event_reader and poll_loop)
         self._queue: queue.Queue = queue.Queue()

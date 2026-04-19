@@ -2,16 +2,13 @@ import asyncio
 import logging
 
 
-from core.config_loader import Config, Gui
+from core.config_loader import AppConfig, GuiConfig, BrowserConfig
 from core.runner import run
 
 # outputters
 from outputters.terminal import TerminalOutputter
 from outputters.gui_dearpygui import GUIOutputter
-
-from outputters.browser import make_browser_outputter
-from outputters.browser import app as fastapi_app
-import uvicorn
+from outputters.browser import BrowserOutputter, app as fastapi_app
 
 
 #  SECTION:=============================================================
@@ -19,18 +16,18 @@ import uvicorn
 #  =====================================================================
 def main():
     #  -------- Load app config -------------------------------------------------------------
-    app_config: Config = Config()
+    app_config: AppConfig = AppConfig()
 
     if app_config.write_default_config:
-        Config.save_defaults_toml()
+        AppConfig.save_defaults_toml()
         raise SystemExit("default config file is created")
 
     #  -------- logger ------------------------------------------------------------------
 
-    loglevel = app_config.log_level
-    numeric_level = getattr(logging, loglevel.upper(), None)
+    log_level = app_config.log_level
+    numeric_level = getattr(logging, log_level.upper(), None)
     if not isinstance(numeric_level, int):
-        raise ValueError("Invalid log level: %s" % loglevel)
+        raise ValueError("Invalid log level: %s" % log_level)
 
     logging.basicConfig(
         level=numeric_level,
@@ -50,24 +47,25 @@ def main():
         on_frame = terminal_outputter.on_frame
         terminal_outputter.reserve_display()
     elif app_config.outputter == "browser":
-        on_update, on_frame = make_browser_outputter()
-        # send history size to fastapi_app
-        fastapi_app.state.history_size = app_config.history_size
+        browser_config: BrowserConfig = app_config.outputters.browser
+        browser_outputter = BrowserOutputter(
+            app=fastapi_app,
+            history_size=app_config.history_size,
+            config=browser_config,
+            log_level=app_config.log_level,
+        )
+        on_update, on_frame = browser_outputter.make_on_update_and_on_frame()
+        # on_update = browser_outputter.on_update
+        # on_frame = browser_outputter.on_frame
         try:
-            config = uvicorn.Config(
-                fastapi_app,
-                host=app_config.outputters.browser.host,
-                port=app_config.outputters.browser.port,
-                log_level=app_config.log_level,
-            )
-            server = uvicorn.Server(config)
-            extra_task = server.serve
+            extra_task = browser_outputter.create_server_task()
         except Exception:
-            logger.exception("uvicorn is not loaded properly")
+            pass
+            logger.exception("server is not loaded properly")
             raise SystemExit
 
     elif app_config.outputter == "gui":
-        gui_config: Gui = app_config.outputters.gui
+        gui_config: GuiConfig = app_config.outputters.gui
         gui = GUIOutputter(
             device_name=app_config.device_name,
             history_size=app_config.history_size,

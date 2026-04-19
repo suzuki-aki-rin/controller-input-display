@@ -59,7 +59,15 @@ def main():
         # on_update = browser_outputter.on_update
         # on_frame = browser_outputter.on_frame
         try:
+            import threading
+
             extra_task = browser_outputter.create_server_task()
+
+            def async_task():
+                asyncio.run(extra_task())
+
+            t = threading.Thread(target=async_task, daemon=True)
+            t.start()
         except Exception:
             pass
             logger.exception("server is not loaded properly")
@@ -86,7 +94,6 @@ def main():
                 on_update=on_update,
                 enable_liveline=app_config.enable_liveline,
                 logfile=app_config.inputlog_path,
-                extra_task=extra_task,
             )
         )
     except KeyboardInterrupt:

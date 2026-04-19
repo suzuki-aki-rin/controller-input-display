@@ -1,0 +1,17 @@
+log_level = "info"
+device_name = "ds4"
+outputter = "terminal"
+history_size = 30
+liveline_output = false
+# inputlog_path = "@None"
+[outputters.terminal]
+
+[outputters.browser]
+port = 8100
+host = "0.0.0.0"
+
+[outputters.gui]
+font_path = "/home/jiji-0909/.local/share/fonts/Cica_v5.0.3/Cica-Bold.ttf"
+font_size = 32
+width = 300
+height = 1200

@@ -1,0 +1,5 @@
+[outputters.browser]
+port = 8100
+
+[outputters.gui]
+font_path = "~/.local/share/fonts/Cica_v5.0.3/Cica-Bold.ttf"

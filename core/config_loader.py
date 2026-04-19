@@ -101,7 +101,7 @@ class Config(BaseSettings):
     device_name: str = "Microsoft X-Box 360 pad"
     outputter: Literal["terminal", "browser", "gui"] = "terminal"
     history_size: int = 30
-    liveline_output: bool = False
+    enable_liveline: bool = False
     inputlog_path: Path | None = None
     write_default_config: bool = Field(
         default=False,

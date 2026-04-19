@@ -14,9 +14,10 @@ class TerminalOutputter:
     Outputs input history to terminal
     """
 
-    def __init__(self, history_size) -> None:
+    def __init__(self, history_size: int, enable_liveline: bool) -> None:
         self.history_size = history_size
         self.history: deque[str] = deque(maxlen=self.history_size)
+        self.enable_liveline = enable_liveline
 
     def reserve_display(self) -> None:
         """Print blank lines once at startup to reserve the display block."""
@@ -35,6 +36,8 @@ class TerminalOutputter:
     def on_update(self, hold, dirs, btns) -> None:
         line = format_line(hold, dirs, btns)
         self.history.appendleft(line)
+        if not self.enable_liveline:
+            self.redraw("")
 
     def on_frame(self, hold, dirs, btns) -> None:
         live_line = format_line(hold, dirs, btns)

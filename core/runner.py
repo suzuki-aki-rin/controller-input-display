@@ -21,6 +21,7 @@ async def run(
     device_name: str,
     on_update: Callable,
     on_frame: Callable,
+    enable_liveline: bool = False,
     logfile: Path | None = None,
     extra_task: Callable | None = None,
 ):
@@ -60,6 +61,7 @@ async def run(
                     on_update=on_update,
                     on_frame=on_frame,
                     filelog=filelogger,
+                    enable_liveline=enable_liveline,
                 )
             )
             if extra_task:

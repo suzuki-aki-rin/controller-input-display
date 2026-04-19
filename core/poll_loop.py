@@ -20,6 +20,7 @@ async def poll_loop(
     on_update: Callable,
     on_frame: Callable,
     filelog: InputLogger | None,
+    enable_liveline: bool = False,
 ):
     """
     on_update is a callback when conroller input state is change.
@@ -62,7 +63,8 @@ async def poll_loop(
                 prev_btns = cur_btns
 
             # send current input elements to on_update()
-            on_frame(hold, cur_dirs, cur_btns)
+            if enable_liveline:
+                on_frame(hold, cur_dirs, cur_btns)
     except asyncio.CancelledError:
         logger.debug("polling is cancelled.")
     finally:

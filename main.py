@@ -39,9 +39,13 @@ def main():
     logger = logging.getLogger(__name__)
 
     #  -------- Entry point ----------------------------------------------------------------
+    #  use for uvicorn of browser outputter or something else for the futrue.
     extra_task = None
     if app_config.outputter == "terminal" or not app_config.outputter:
-        terminal_outputter = TerminalOutputter(history_size=app_config.history_size)
+        terminal_outputter = TerminalOutputter(
+            history_size=app_config.history_size,
+            enable_liveline=app_config.enable_liveline,
+        )
         on_update = terminal_outputter.on_update
         on_frame = terminal_outputter.on_frame
         terminal_outputter.reserve_display()
@@ -81,6 +85,7 @@ def main():
                 device_name=app_config.device_name,
                 on_frame=on_frame,
                 on_update=on_update,
+                enable_liveline=app_config.enable_liveline,
                 logfile=app_config.inputlog_path,
                 extra_task=extra_task,
             )

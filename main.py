@@ -21,6 +21,10 @@ def main():
     #  -------- Load app config -------------------------------------------------------------
     app_config: Config = Config()
 
+    if app_config.write_default_config:
+        Config.save_defaults_toml()
+        raise SystemExit("default config file is created")
+
     #  -------- logger ------------------------------------------------------------------
 
     loglevel = app_config.log_level

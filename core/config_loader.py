@@ -1,4 +1,5 @@
 from pydantic_settings import (
+    CLI_SUPPRESS,
     BaseSettings,
     SettingsConfigDict,
     PydanticBaseSettingsSource,
@@ -63,8 +64,8 @@ class Gui(BaseModel):
     """Config for gui outputter"""
 
     font_path: Path = Field(
-        default=Path("/usr/share/fonts/truetype/dejavu/dejavusansmono.ttf"),
-        validate_default=True,
+        default=Path("/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf"),
+        validate_default=False,
     )
     # font_path: Path = Path("/usr/share/fonts/truetype/dejavu/dejavusansmono.ttf")
     font_size: int = 32
@@ -87,7 +88,14 @@ class Outputters(BaseModel):
 
 
 class Config(BaseSettings):
-    """display pad input history. three outputters are available."""
+    """
+    Displays pad input history. three outputters are available.
+    Settings except for the commandline options is written in config.toml.
+    If no config.toml, create defaults.toml via --write_default_config=True option
+    and modfiy it.
+
+    gui font_path in defaults.toml is possibly not valid. Is so, modify it in config.toml.
+    """
 
     log_level: str = "info"
     device_name: str = "Microsoft X-Box 360 pad"
@@ -95,7 +103,11 @@ class Config(BaseSettings):
     history_size: int = 30
     liveline_output: bool = False
     inputlog_path: Path | None = None
-    outputters: Outputters
+    write_default_config: bool = Field(
+        default=False,
+        description="if True(true in toml), outputs default_config.toml and app ends.",
+    )
+    outputters: Outputters = Field(default_factory=Outputters, description=CLI_SUPPRESS)
 
     model_config = SettingsConfigDict(
         toml_file=["config.toml"],

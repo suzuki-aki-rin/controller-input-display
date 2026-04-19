@@ -1,17 +1,18 @@
 log_level = "info"
-device_name = "ds4"
+device_name = "Microsoft X-Box 360 pad"
 outputter = "terminal"
 history_size = 30
 liveline_output = false
 # inputlog_path = "@None"
+write_default_config = true
 [outputters.terminal]
 
 [outputters.browser]
-port = 8100
+port = 8000
 host = "0.0.0.0"
 
 [outputters.gui]
-font_path = "/home/jiji-0909/.local/share/fonts/Cica_v5.0.3/Cica-Bold.ttf"
+font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.t"
 font_size = 32
 width = 300
 height = 1200

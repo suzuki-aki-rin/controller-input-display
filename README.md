@@ -11,7 +11,7 @@ libraries: see requirements.txt
 
 ## Dependencies
 
-pip install evdev
+pip install evdev pydantic rtoml
 
 1. outputter: browser
 pip install uvicorn websockets jinja2
@@ -22,21 +22,33 @@ pip install dearpygui
 
 ```bash
 $python main.py --help
-usage: python main.py [options]
+usage: main.py [-h] [--log_level str] [--device_name str]
+               [--outputter {terminal,browser,gui}] [--history_size int]
+               [--enable_liveline bool] [--inputlog_path Path]
+               [--write_default_config bool]
 
-displays gamepad input history.
-Modify config.py to change default values.
+Displays pad input history. three outputters are available.
+Settings except for the commandline options is written in config.toml.
+If no config.toml, create defaults.toml via --write_default_config=True option
+and modfiy it.
+
+gui font_path in defaults.toml is possibly not valid. Is so, modify it in config.toml.
+check device name by using evtest or something.
 
 options:
   -h, --help            show this help message and exit
-  --logfile LOGFILE     log file name. if none, log file is not created.
-  --device-name DEVICE_NAME
-                        device name. partial name is okay like Microsoft but case-sensitive.
-                        To know device names see evtest or something.
-  --outputter OUTPUTTER
-                        select outputter: terminal, browswer, gui. if none, terminal
-  --loglevel LOGLEVEL   loglevel: set info, warning,debug or something
-  --port PORT           browser port. that is used for web browser outputter
+  --log_level str       (default: info)
+  --device_name str     (default: Microsoft X-Box 360 pad)
+  --outputter {terminal,browser,gui}
+                        (default: terminal)
+  --history_size int    (default: 30)
+  --enable_liveline bool
+                        (default: False)
+  --inputlog_path Path  (default: None)
+  --write_default_config bool
+                        if True(true in toml), outputs default_config.toml and
+                        app ends. (default: False)
+
 ```
 
 ```bash
@@ -62,6 +74,9 @@ python main.py --outputter=gui
 python main.py --device-name=X-Box # Valid
 python main.py --device-name="X-Box pad" # Invalid
 
-# Configuration. Edit conig.py
-vim config.py
+# Configuration.
+# Create defaults.toml
+python main.py --write_default_config=True
+# Edit defaults.toml and save it as config.toml
+vim defaults.toml
 ```

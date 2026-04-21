@@ -11,19 +11,19 @@ Usage example:
     async def poll_print():
         while True:
             await asyncio.sleep(1)
-            print(gp_reader.state)
+            print(gp_reader.pressed_buttons)
 
     try:
         async with asyncio.TaskGroup() as tg:
-            tg.create_task(gp_reader.async_read())
+            tg.create_task(gp_reader.async_read_buttons())
             tg.create_task(poll_print())
-    except* CancelledError:
-        logger.error("cancelled error")
-        raise CancelledError
-"""
+    except* CancelledError as:
+        logger.error("cancellederror")
+        raise CancelledError"""
 
 from asyncio import CancelledError
 from typing import Self
+from pprint import pprint
 from dataclasses import dataclass
 
 import evdev
@@ -44,12 +44,34 @@ import logging
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
+#  =====================================================================
+#            Helpers
+#  =====================================================================
+
+
+def show_devices() -> None:
+    devices = [evdev.InputDevice(path) for path in evdev.list_devices()]
+    for device in devices:
+        print(device.path, device.name)
+
+
+def find_device(dev_name: str) -> InputDevice | None:
+    for path in evdev.list_devices():
+        dev = InputDevice(path)
+        if dev_name in dev.name:
+            return dev
+    return None
+
+
+def show_device_capabilities(device: InputDevice, verbose: bool = False) -> None:
+    pprint(device.capabilities(verbose=verbose))
+
 
 #  =====================================================================
 #            Classes
 #  =====================================================================
 @dataclass
-class GamepadState:
+class GamepadPressedButtons:
     dirs: set[str]  # e.g., {"left", "right"}
     btns: set[str]
 
@@ -57,27 +79,22 @@ class GamepadState:
 class GamepadReader:
     """
     A reader for a gamepad device that reads input events and store them.
+
+    Use cls.from_device_name() to create instance from device name
+    Use cls.find_device to get device from device name
     """
 
     def __init__(self, device: InputDevice):
         self.device: InputDevice = device
-        self.state = GamepadState(dirs=set(), btns=set())
+        self.pressed_buttons = GamepadPressedButtons(dirs=set(), btns=set())
         # self.btn_map = self._build_button_map()
 
     @classmethod
-    def find_device(cls, dev_name: str) -> InputDevice | None:
-        for path in evdev.list_devices():
-            dev = InputDevice(path)
-            if dev_name in dev.name:
-                return dev
-        return None
-
-    @classmethod
     def from_device_name(cls, device_name: str) -> Self:
-        device = cls.find_device(device_name)
+        device = find_device(device_name)
         return cls(device)
 
-    async def async_read(self):
+    async def async_read_buttons(self):
         # get reference to avoid self reference in loop for a slightly good performance.
         device = self.device
         update = self.update
@@ -89,7 +106,7 @@ class GamepadReader:
             logger.debug("event_reader is cancelled")
             raise
 
-    def read(self):
+    def read_buttons(self):
         # get reference to avoid self reference in loop for a slightly good performance.
         device = self.device
         update = self.update
@@ -102,8 +119,8 @@ class GamepadReader:
             raise
 
     def update(self, event):
-        btns = self.state.btns
-        dirs = self.state.dirs
+        btns = self.pressed_buttons.btns
+        dirs = self.pressed_buttons.dirs
 
         #  -------- EV_KEY --------------------------------------------------------------
         if event.type == ecodes.EV_KEY:
@@ -154,22 +171,30 @@ async def main():
     async def poll_print():
         while True:
             await asyncio.sleep(1)
-            print(gp_reader.state)
+            print(gp_reader.pressed_buttons)
 
     try:
         async with asyncio.TaskGroup() as tg:
-            tg.create_task(gp_reader.async_read())
+            tg.create_task(gp_reader.async_read_buttons())
             tg.create_task(poll_print())
-    except* CancelledError as e:
+    except* CancelledError:
         logger.error("cancellederror")
         raise CancelledError
 
 
 if __name__ == "__main__":
     import asyncio
+    from pprint import pprint
 
     try:
-        # print(__doc__)
-        asyncio.run(main())
+        device = find_device("Microsoft")
+        if device:
+            print("none")
+            pprint(device.capabilities())
+            print("false")
+            pprint(device.capabilities(verbose=False))
+            print("true")
+            pprint(device.capabilities(verbose=True))
+        # asyncio.run(main())
     except KeyboardInterrupt:
-        print("exit")
+        repr("exit")

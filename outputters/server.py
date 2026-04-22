@@ -7,8 +7,7 @@ from fastapi.templating import Jinja2Templates
 
 from core.gamepad import GamepadReader
 from core.pollers import GamepadPoller, GamepadHoldedButtons, send_holded_buttons_async
-
-from core.config_loader import AppConfig
+from core.inputlog_saver import InputLogSaver
 from core.constants import NUMPAD, ARROW
 
 #  =====================================================================
@@ -34,10 +33,20 @@ def format_payload(pressed_buttons: GamepadHoldedButtons) -> dict:
     }
 
 
+#  =====================================================================
+#            Variables
+#  =====================================================================
+
+
 # Queue where update events are put; WebSockets will watch it
 queue = asyncio.Queue()
 pressed_buttons = GamepadHoldedButtons(dirs=set(), btns=set(), hold_frame=0)
 templates = Jinja2Templates(directory="outputters/templates")
+inputlog_saver: InputLogSaver | None = None
+
+#  =====================================================================
+#            FastAPI, lifespan and instanciation
+#  =====================================================================
 
 
 @asynccontextmanager
@@ -48,6 +57,11 @@ async def lifespan(app: FastAPI):
 
     gamepad = GamepadReader.from_device_name(app.state.device)
     poller = GamepadPoller(gamepad, lambda x: send_holded_buttons_async(queue, x))
+    # input log
+    global inputlog_saver
+    inputlog_saver = (
+        InputLogSaver(app.state.inputlog_path) if app.state.inputlog_path else None
+    )
 
     task_1 = asyncio.create_task(gamepad.async_read_buttons())
     task_2 = asyncio.create_task(poller.run())
@@ -56,6 +70,9 @@ async def lifespan(app: FastAPI):
         yield
     finally:  # ✅ finally always runs, even if cancelled
         logger.debug("lifespan finally block")
+        if inputlog_saver:
+            inputlog_saver.save_to_file()
+            logger.info("input history is saved: %s" % inputlog_saver.file_path)
         # await app.state.queue.put(None)
         for ws in app.state.active_websockets:
             await ws.close()
@@ -65,6 +82,10 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+
+#  =====================================================================
+#            Endpoints
+#  =====================================================================
 
 
 @app.get("/")
@@ -94,15 +115,19 @@ async def websocket_endpoint(websocket: WebSocket):
                 logger.debug("queue.get cancelled")
                 break  # ✅ break loop, don't re-raise here
             payload = format_payload(payload)
-            logger.debug("server recieved new queue")
             await websocket.send_text(json.dumps(payload))
+            # save logs
+            if inputlog_saver:
+                inputlog_saver.input(payload)
             logger.debug("input is sent to browser via websocket")
     except WebSocketDisconnect:
         logger.debug("websocket is disconnected")
+    except RuntimeError:
+        logger.error("Maybe too frequent input. RuntimeError")
     finally:
-        # try:
         app.state.active_websockets.remove(websocket)
-        await websocket.close()  # ✅ guard against already-closed
-        # except Exception:
-        #     pass
+        try:
+            await websocket.close()  # ✅ guard against already-closed
+        except Exception:
+            pass
         logger.debug("websocket closed")

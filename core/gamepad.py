@@ -92,6 +92,8 @@ class GamepadReader:
     @classmethod
     def from_device_name(cls, device_name: str) -> Self:
         device = find_device(device_name)
+        if not device:
+            raise SystemExit("no device. name: %s" % device_name)
         return cls(device)
 
     async def async_read_buttons(self):
@@ -184,17 +186,9 @@ async def main():
 
 if __name__ == "__main__":
     import asyncio
-    from pprint import pprint
 
     try:
         device = find_device("Microsoft")
-        if device:
-            print("none")
-            pprint(device.capabilities())
-            print("false")
-            pprint(device.capabilities(verbose=False))
-            print("true")
-            pprint(device.capabilities(verbose=True))
-        # asyncio.run(main())
+        asyncio.run(main())
     except KeyboardInterrupt:
         repr("exit")

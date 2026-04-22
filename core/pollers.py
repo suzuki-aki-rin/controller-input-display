@@ -90,6 +90,7 @@ class GamepadPoller:
         """starts loop where gamepad state is checked at 1/60 sec interval. if updated,
         the state and hold frame is sent to on_frame function.
         """
+        logger.debug("poller.run() starts.")
 
         # initialize
         self.prev_pressed_buttons = copy_pressed_buttons(self.curr_pressed_buttons)
@@ -99,35 +100,39 @@ class GamepadPoller:
         # to save state temporaly
         temp_prev_pressed_buttons: GamepadPressedButtons
 
-        # start 1F(1/60 second) loop. The 1F is not very accurate, maybe.
-        while True:
-            # wait until
-            next_tick += FRAME_SEC
-            sleep = next_tick - asyncio.get_event_loop().time()
-            if sleep > 0:
-                # sleep to make the loop is 1F
-                await asyncio.sleep(sleep)
+        try:
+            # start 1F(1/60 second) loop. The 1F is not very accurate, maybe.
+            while True:
+                # wait until
+                next_tick += FRAME_SEC
+                sleep = next_tick - asyncio.get_event_loop().time()
+                if sleep > 0:
+                    # sleep to make the loop is 1F
+                    await asyncio.sleep(sleep)
 
-            if self._pressed_buttons_updated():
-                # store current pressed button instantly.
-                temp_prev_pressed_buttons = copy_pressed_buttons(
-                    self.curr_pressed_buttons
-                )
+                if self._pressed_buttons_updated():
+                    # store current pressed button instantly.
+                    temp_prev_pressed_buttons = copy_pressed_buttons(
+                        self.curr_pressed_buttons
+                    )
 
-                # send holded buttons that has pressed buttons and their hold frame to on_update
-                holded_buttons = make_holded_buttons(
-                    self.prev_pressed_buttons, hold_frame
-                )
+                    # send holded buttons that has pressed buttons and their hold frame to on_update
+                    holded_buttons = make_holded_buttons(
+                        self.prev_pressed_buttons, hold_frame
+                    )
 
-                # send holded button to on_update assigned at class construction.
-                await self._hold_buttons_sender(holded_buttons)
+                    # send holded button to on_update assigned at class construction.
+                    await self._hold_buttons_sender(holded_buttons)
 
-                # update prev_pressed_buttons with stored curr_pressed_button above and reset hold_frame
-                self.prev_pressed_buttons = temp_prev_pressed_buttons
-                hold_frame = 1
-            else:
-                # increment hold_frame
-                hold_frame += 1
+                    # update prev_pressed_buttons with stored curr_pressed_button above and reset hold_frame
+                    self.prev_pressed_buttons = temp_prev_pressed_buttons
+                    hold_frame = 1
+                else:
+                    # increment hold_frame
+                    hold_frame += 1
+        except asyncio.CancelledError:
+            logger.debug("GamepadPoller run() is cancelled.")
+            raise
 
 
 # async def poll_loop(

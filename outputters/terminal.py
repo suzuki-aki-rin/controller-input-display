@@ -1,9 +1,11 @@
 import asyncio
 from collections import deque
+from pathlib import Path
 
 from core.constants import NUMPAD, ARROW
 from core.gamepad import GamepadReader
 from core.pollers import GamepadPoller, send_holded_buttons_async, GamepadHoldedButtons
+from core.inputlog_saver import InputLogSaver
 
 
 #  =====================================================================
@@ -27,9 +29,12 @@ class TerminalOutputter:
     Outputs input history to terminal
     """
 
-    def __init__(self, device_name: str, history_size: int) -> None:
+    def __init__(
+        self, device_name: str, history_size: int, inputlog_path: Path | None = None
+    ) -> None:
         self.device_name = device_name
         self.history_size = history_size
+        self.inputlog_path = inputlog_path
         self.history: deque[str] = deque(maxlen=self.history_size)
         # self.enable_liveline = enable_liveline
 
@@ -40,18 +45,21 @@ class TerminalOutputter:
 
     def redraw(self) -> None:
         print(f"\033[{self.history_size + 1}A", end="")
-        # print(f"\r{live_line:<40}")
+        print("\rinput history")
         for line in self.history:
-            print(f"\r{line:<40}")
+            print(f"\r{line:<20}")
         blank_count = self.history_size - len(self.history)
         for _ in range(blank_count):
-            print(f"\r{'':<40}")
+            print(f"\r{'':<20}")
 
     async def run(self) -> None:
         logger.debug("terminal outputter starts")
         queue = asyncio.Queue()
         gamepad = GamepadReader.from_device_name(self.device_name)
         poller = GamepadPoller(gamepad, lambda x: send_holded_buttons_async(queue, x))
+        inputlog_saver = (
+            InputLogSaver(self.inputlog_path) if self.inputlog_path else None
+        )
 
         async def read_and_draw() -> None:
             try:
@@ -59,6 +67,8 @@ class TerminalOutputter:
                     pressed_buttons = await queue.get()
                     line = format_line(pressed_buttons)
                     self.history.appendleft(line)
+                    if inputlog_saver:
+                        inputlog_saver.input(line)
                     self.redraw()
             except asyncio.CancelledError:
                 logger.info("terminal output is cancelled")
@@ -72,3 +82,7 @@ class TerminalOutputter:
         except* asyncio.CancelledError:
             logger.info("tasks are cancelled")
             raise asyncio.CancelledError
+        finally:
+            # save input history to file when terminal outputter is cancelled
+            if inputlog_saver:
+                inputlog_saver.save_to_file()

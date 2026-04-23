@@ -33,7 +33,7 @@ def main():
 
     logging.basicConfig(
         level=numeric_level,
-        format="%(asctime)s | %(levelname)s | %(name)10.10s | %(funcName)10.10s | l:%(lineno)3.3s | %(message)-s",
+        format="%(asctime)s | %(levelname)s | %(name)10.10s | %(funcName)10.10s |%(lineno) 4.4s | %(message)-s",
     )
     logger = logging.getLogger(__name__)
 
@@ -44,6 +44,7 @@ def main():
         terminal_outputter = TerminalOutputter(
             device_name=app_config.device_name,
             history_size=app_config.history_size,
+            inputlog_path=app_config.inputlog_path,
         )
         # on_update = terminal_outputter.on_update
         # on_frame = terminal_outputter.on_frame

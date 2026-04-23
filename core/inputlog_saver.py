@@ -1,4 +1,5 @@
 from pathlib import Path
+from datetime import datetime
 from core.common import format_payload_to_str
 
 #  =====================================================================
@@ -19,10 +20,16 @@ class InputLogSaver:
         self.input_logs.append(buttons)
 
     def save_to_file(self) -> None:
-        with open(self.file_path, "w") as f:
-            for f_payload in self.input_logs:
-                line = format_payload_to_str(f_payload)
-                f.writelines(line + "\n")
+
+        with open(self.file_path, "a") as f:
+            f.write(f"input log at {datetime.now().strftime('%Y-%m-%d_%H:%M:%S')}\n")
+            f.writelines(
+                (format_payload_to_str(line) + "\n" for line in self.input_logs)
+            )
+            f.write("\n")
+            # for f_payload in self.input_logs:
+            #     line = format_payload_to_str(f_payload)
+            #     f.writelines(line + "\n")
 
     def change_path(self, new_path: Path) -> None:
         self.file_path = new_path

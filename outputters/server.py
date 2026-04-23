@@ -26,7 +26,7 @@ def format_payload(pressed_buttons: GamepadHoldedButtons) -> dict:
     numpad = NUMPAD.get(frozenset(pressed_buttons.dirs), "5")
     arrow = ARROW[numpad]
     return {
-        "type": "update",
+        # "type": "update",
         "hold": pressed_buttons.hold_frame,
         "arrow": arrow,
         "btns": sorted(pressed_buttons.btns),
@@ -117,15 +117,15 @@ async def websocket_endpoint(websocket: WebSocket):
         try:
             while True:
                 # try:
-                payload = await app.state.queue.get()
+                holded_buttons = await app.state.queue.get()
                 # except asyncio.CancelledError:
                 # logger.debug("queue.get cancelled")
                 # break  # ✅ break loop, don't re-raise here
-                payload = format_payload(payload)
-                await websocket.send_text(json.dumps(payload))
+                holded_buttons_dict = format_payload(holded_buttons)
+                await websocket.send_text(json.dumps(holded_buttons_dict))
                 # save logs
                 if inputlog_saver:
-                    inputlog_saver.input(payload)
+                    inputlog_saver.input(holded_buttons)
                 logger.debug("input is sent to browser via websocket")
         except asyncio.CancelledError:
             logger.debug("get_queue_and_send_to_ws in websocket endpoint is canceled")

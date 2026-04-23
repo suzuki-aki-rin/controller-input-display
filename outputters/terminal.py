@@ -54,7 +54,7 @@ class TerminalOutputter:
 
     async def run(self) -> None:
         logger.debug("terminal outputter starts")
-        queue = asyncio.Queue()
+        queue: asyncio.Queue[GamepadHoldedButtons] = asyncio.Queue()
         gamepad = GamepadReader.from_device_name(self.device_name)
         poller = GamepadPoller(gamepad, lambda x: send_holded_buttons_async(queue, x))
         inputlog_saver = (
@@ -64,11 +64,11 @@ class TerminalOutputter:
         async def read_and_draw() -> None:
             try:
                 while True:
-                    pressed_buttons = await queue.get()
+                    pressed_buttons: GamepadHoldedButtons = await queue.get()
                     line = format_line(pressed_buttons)
                     self.history.appendleft(line)
                     if inputlog_saver:
-                        inputlog_saver.input(line)
+                        inputlog_saver.input(pressed_buttons)
                     self.redraw()
             except asyncio.CancelledError:
                 logger.info("terminal output is cancelled")

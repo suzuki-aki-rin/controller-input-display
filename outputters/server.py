@@ -109,7 +109,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 logger.debug("websocket disconnected")
                 if inputlog_saver:
                     inputlog_saver.save_to_file()
-                    logger.info("input history is saved: %s" % inputlog_saver.file_path)
+                    logger.info("input history is saved: %s", inputlog_saver.file_path)
             break
         raise MyWebSocketDisconnected
 

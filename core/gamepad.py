@@ -93,7 +93,7 @@ class GamepadReader:
     def from_device_name(cls, device_name: str) -> Self:
         device = find_device(device_name)
         if not device:
-            raise SystemExit("no device. name: %s" % device_name)
+            raise SystemExit("no device. name: %s", device_name)
         return cls(device)
 
     async def async_read_buttons(self):

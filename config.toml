@@ -1,4 +1,5 @@
 [outputters.browser]
+host = "localhost"
 port = 8100
 
 [outputters.gui]

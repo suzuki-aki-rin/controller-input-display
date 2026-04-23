@@ -2,7 +2,7 @@ import asyncio
 import json
 
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
+from fastapi import FastAPI, WebSocket, Request
 from fastapi.templating import Jinja2Templates
 
 from core.gamepad import GamepadReader
@@ -33,6 +33,11 @@ def format_payload(pressed_buttons: GamepadHoldedButtons) -> dict:
     }
 
 
+# custom exception to cancel taskgroup
+class MyWebSocketDisconnected(Exception):
+    pass
+
+
 #  =====================================================================
 #            Variables
 #  =====================================================================
@@ -57,28 +62,17 @@ async def lifespan(app: FastAPI):
 
     gamepad = GamepadReader.from_device_name(app.state.device)
     poller = GamepadPoller(gamepad, lambda x: send_holded_buttons_async(queue, x))
-    # input log
-    global inputlog_saver
-    inputlog_saver = (
-        InputLogSaver(app.state.inputlog_path) if app.state.inputlog_path else None
-    )
 
     task_1 = asyncio.create_task(gamepad.async_read_buttons())
     task_2 = asyncio.create_task(poller.run())
 
-    try:
-        yield
-    finally:  # ✅ finally always runs, even if cancelled
-        logger.debug("lifespan finally block")
-        if inputlog_saver:
-            inputlog_saver.save_to_file()
-            logger.info("input history is saved: %s" % inputlog_saver.file_path)
-        # await app.state.queue.put(None)
-        for ws in app.state.active_websockets:
-            await ws.close()
-        task_1.cancel()
-        task_2.cancel()
-        logger.debug("cleanup done")
+    # try:
+    yield
+    # finally:  # ✅ finally always runs, even if cancelled
+    logger.debug("lifespan finally block")
+    task_1.cancel()
+    task_2.cancel()
+    logger.debug("cleanup done")
 
 
 app = FastAPI(lifespan=lifespan)
@@ -92,6 +86,8 @@ app = FastAPI(lifespan=lifespan)
 async def index(request: Request):
     # Send main loop variables, history_size and server url(changed to ws_url) to html template
     ws_url = str(request.base_url).replace("http", "ws", 1) + "ws"
+    # ws_url = f"http://{app.state.host}:{app.state.port}/ws"
+    logger.debug(ws_url)
     history_size = app.state.history_size
 
     return templates.TemplateResponse(
@@ -103,31 +99,58 @@ async def index(request: Request):
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
-    app.state.active_websockets.append(websocket)  # ✅ register
+    #  -------- task functions -----------------------------------------------------------
 
-    logger.debug("websocket is connected")
-    try:
+    async def wait_for_disconnect():
+        # Save input history when websocket is disconnected
         while True:
-            try:
-                payload = await app.state.queue.get()
-            except asyncio.CancelledError:
-                logger.debug("queue.get cancelled")
-                break  # ✅ break loop, don't re-raise here
-            payload = format_payload(payload)
-            await websocket.send_text(json.dumps(payload))
-            # save logs
-            if inputlog_saver:
-                inputlog_saver.input(payload)
-            logger.debug("input is sent to browser via websocket")
-    except WebSocketDisconnect:
-        logger.debug("websocket is disconnected")
-    except RuntimeError:
-        logger.error("Maybe too frequent input. RuntimeError")
-    finally:
-        app.state.active_websockets.remove(websocket)
+            msg = await websocket.receive()
+            if msg["type"] == "websocket.disconnect":
+                logger.debug("websocket disconnected")
+                if inputlog_saver:
+                    inputlog_saver.save_to_file()
+                    logger.info("input history is saved: %s" % inputlog_saver.file_path)
+            break
+        raise MyWebSocketDisconnected
+
+    async def get_queue_and_send_to_ws():
         try:
-            await websocket.close()  # ✅ guard against already-closed
-        except Exception:
-            pass
-        logger.debug("websocket closed")
+            while True:
+                # try:
+                payload = await app.state.queue.get()
+                # except asyncio.CancelledError:
+                # logger.debug("queue.get cancelled")
+                # break  # ✅ break loop, don't re-raise here
+                payload = format_payload(payload)
+                await websocket.send_text(json.dumps(payload))
+                # save logs
+                if inputlog_saver:
+                    inputlog_saver.input(payload)
+                logger.debug("input is sent to browser via websocket")
+        except asyncio.CancelledError:
+            logger.debug("get_queue_and_send_to_ws in websocket endpoint is canceled")
+            raise
+
+        # except RuntimeError:
+        #     logger.error("Maybe too frequent input. RuntimeError")
+
+    #  -------- main -------------------------------------------------------------------
+
+    # input log saver
+    inputlog_saver = (
+        InputLogSaver(app.state.inputlog_path) if app.state.inputlog_path else None
+    )
+    await websocket.accept()
+    # app.state.active_websockets.append(websocket)  # ✅ register
+    logger.debug("websocket is connected")
+
+    try:
+        async with asyncio.TaskGroup() as tg:
+            # when wait_for_disconnect ends, then raise MyWebSocketDisconnected
+            tg.create_task(wait_for_disconnect())
+            tg.create_task(get_queue_and_send_to_ws())
+
+    except* MyWebSocketDisconnected:
+        logger.debug("tasks in websocket are canceled")
+
+    logger.debug("websocket closed")

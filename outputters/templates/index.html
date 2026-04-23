@@ -111,14 +111,14 @@ ws.onclose = () => {
 ws.onmessage = (e) => {
   const data = JSON.parse(e.data);
 
-  if (data.type === 'frame') {
-    document.getElementById('live-frames').textContent = data.hold;
-    document.getElementById('live-arrow').textContent = data.arrow;
-    document.getElementById('live-btns').innerHTML = btnsHtml(data.btns);
-  } else if (data.type === 'update') {
+  // if (data.type === 'frame') {
+  //   document.getElementById('live-frames').textContent = data.hold;
+  //   document.getElementById('live-arrow').textContent = data.arrow;
+  //   document.getElementById('live-btns').innerHTML = btnsHtml(data.btns);
+  // } else if (data.type === 'update') {
     history.unshift(data);
     renderHistory();
-  }
+  // }
 };
 </script>
 </body>

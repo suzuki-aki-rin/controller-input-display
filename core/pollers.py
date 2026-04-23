@@ -50,7 +50,7 @@ async def send_holded_buttons_async(
     """sends holded buttons by asyncio.Queue. For FastAPI or something. assign to GamepadReader by using lambda.
 
     Usage:
-        GamepadPoller(..., _hold_button_sender = lambda btns:send_holded_buttons_async(queue, btns)
+        GamepadPoller(..., _send_hold_button_to_queue = lambda btns:send_holded_buttons_async(queue, btns)
     """
     await queue.put(holded_buttons)
 
@@ -61,7 +61,7 @@ async def send_holded_buttons_sync(
     """sends holded buttons by queue.Queue. For GUI app. assign to GamepadReader by using lambda.
 
     Usage:
-        GamepadPoller(..., _hold_button_sender = lambda btns:send_holded_buttons_sync(queue, btns)
+        GamepadPoller(..., _send_hold_button_to_queue = lambda btns:send_holded_buttons_sync(queue, btns)
     """
     queue.put(holded_buttons)
 
@@ -75,13 +75,13 @@ class GamepadPoller:
     def __init__(
         self,
         gamepad: GamepadReader,
-        hold_button_sender: Callable[[GamepadHoldedButtons], Awaitable[None]],
+        _send_hold_button_to_queue: Callable[[GamepadHoldedButtons], Awaitable[None]],
     ):
         self.gamepad = gamepad
         self.curr_pressed_buttons = gamepad.pressed_buttons
         self.prev_pressed_buttons = GamepadPressedButtons(dirs=set(), btns=set())
 
-        self._hold_buttons_sender = hold_button_sender
+        self._hold_buttons_sender = _send_hold_button_to_queue
 
     def _pressed_buttons_updated(self) -> bool:
         return self.curr_pressed_buttons != self.prev_pressed_buttons
@@ -133,67 +133,6 @@ class GamepadPoller:
         except asyncio.CancelledError:
             logger.debug("GamepadPoller run() is cancelled.")
             raise
-
-
-# async def poll_loop(
-#     state: ControllerState,
-#     on_update: Callable,
-#     on_frame: Callable,
-#     filelog: InputLogger | None = None,
-#     enable_liveline: bool = False,
-# ):
-#     """
-#     on_update is a callback when conroller input state is change.
-#     on_frame is a callback called every frame.
-#     """
-#     prev_dirs: set[str] = set()
-#     prev_btns: set[str] = set()
-#     cur_dirs: set[str] = set()
-#     cur_btns: set[str] = set()
-#     hold = 0
-#     next_tick = asyncio.get_event_loop().time()
-#
-#     logger.debug("poll_loop starts")
-#
-#     try:
-#         while True:
-#             next_tick += FRAME_SEC
-#             sleep = next_tick - asyncio.get_event_loop().time()
-#             if sleep > 0:
-#                 await asyncio.sleep(sleep)
-#
-#             # elements for display. output is like: hold cur_dirs cur_btns(not formatted)
-#             hold += 1
-#             cur_dirs = set(state.dirs)
-#             cur_btns = set(state.btns)
-#
-#             # if input is changed:
-#             if cur_dirs != prev_dirs or cur_btns != prev_btns:
-#                 # send previous input elements to on_update()
-#                 on_update(hold - 1, prev_dirs, prev_btns)
-#
-#                 # file log
-#                 if filelog:
-#                     line = format_line(hold, prev_dirs, prev_btns)
-#                     filelog.write(line)
-#
-#                 # update input elements
-#                 hold = 1
-#                 prev_dirs = cur_dirs
-#                 prev_btns = cur_btns
-#
-#             # send current input elements to on_update()
-#             if enable_liveline:
-#                 on_frame(hold, cur_dirs, cur_btns)
-#     except asyncio.CancelledError:
-#         logger.debug("polling is cancelled.")
-#         raise
-#     finally:
-#         # force live input to prevoius input
-#         # If no on_update() here, live input just before task is cancelled is not logged.
-#         if filelog:
-#             line = format_line(hold, cur_dirs, cur_btns)
-#             filelog.write(line)
 
 
 async def main():

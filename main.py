@@ -3,12 +3,10 @@ import logging
 
 
 from core.config_loader import AppConfig, GuiConfig
-# from core.runner import run
 
 # outputters
 from outputters.terminal import TerminalOutputter
-
-# from outputters.gui_dearpygui import GUIOutputter
+from outputters.gui_dearpygui import GUIOutputter
 from outputters.server import app as app_for_browser
 import uvicorn
 
@@ -33,7 +31,7 @@ def main():
 
     logging.basicConfig(
         level=numeric_level,
-        format="%(asctime)s | %(levelname)s | %(name)10.10s | %(funcName)10.10s |%(lineno) 4.4s | %(message)-s",
+        format="%(asctime)s | %(levelname)s | %(name)10.10s | %(funcName)10.10s|%(lineno) 4.4s | %(message)-s",
     )
     logger = logging.getLogger(__name__)
 
@@ -76,31 +74,18 @@ def main():
         return
 
     elif app_config.outputter == "gui":
-        pass
-    #     gui_config: GuiConfig = app_config.outputters.gui
-    #     gui = GUIOutputter(
-    #         device_name=app_config.device_name,
-    #         history_size=app_config.history_size,
-    #         config=gui_config,
-    #     )
-    #     gui.start(app_config.inputlog_path)
-    #     return
+        gui_config: GuiConfig = app_config.outputters.gui
+        gui = GUIOutputter(
+            device_name=app_config.device_name,
+            history_size=app_config.history_size,
+            config=gui_config,
+            inputlog_path=app_config.inputlog_path,
+        )
+        gui.start()
+        return
     else:
         logger.error("bad outputter. exit")
         raise SystemExit
-
-    # try:
-    #     asyncio.run(
-    #         run(
-    #             device_name=app_config.device_name,
-    #             on_frame=on_frame,
-    #             on_update=on_update,
-    #             enable_liveline=app_config.enable_liveline,
-    #             logfile=app_config.inputlog_path,
-    #         )
-    #     )
-    # except KeyboardInterrupt:
-    #     logger.info("app is stopped by KeyboardInterrupt")
 
 
 if __name__ == "__main__":

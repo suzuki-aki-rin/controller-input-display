@@ -1,41 +1,82 @@
-import queue
 import asyncio
 import threading
 from collections import deque
+from queue import Queue
 from pathlib import Path
+from dataclasses import dataclass, astuple
 
 
 import dearpygui.dearpygui as dpg
 
 from core.config_loader import GuiConfig
 from core.constants import NUMPAD, ARROW
-from core.runner import run
 
+from core.gamepad import GamepadReader
+from core.pollers import GamepadPoller, GamepadHoldedButtons, send_holded_buttons_sync
+from core.inputlog_saver import InputLogSaver
 
-def format_entry(hold: int, dirs: set[str], btns: set[str]) -> dict:
-    numpad = NUMPAD.get(frozenset(dirs), "5")
-    return {
-        "hold": hold,
-        "arrow": ARROW[numpad],
-        "btns": sorted(btns),
-    }
+from core.common import FormattedHoldedButtons, format_holded_buttons
+
+#  =====================================================================
+#            Logger
+#  =====================================================================
+import logging
+
+logger = logging.getLogger(__name__)
+logger.addHandler(logging.NullHandler())
 
 
 class GUIOutputter:
-    def __init__(self, device_name: str, history_size: int, config: GuiConfig) -> None:
+    def __init__(
+        self,
+        device_name: str,
+        history_size: int,
+        config: GuiConfig,
+        inputlog_path: Path | None = None,
+    ) -> None:
         self.device_name = device_name
         self.history_size: int = history_size
-        self.history: deque[dict] = deque(maxlen=self.history_size)
+        self.history: deque[FormattedHoldedButtons] = deque(maxlen=self.history_size)
         self.config: GuiConfig = config
+        self.inputlog_path = inputlog_path
+        self._queue: Queue[GamepadHoldedButtons] = Queue()
 
         # Use queue, thread-safe, for between threads: gui loop and run(event_reader and poll_loop)
-        self._queue: queue.Queue = queue.Queue()
 
-    def on_update(self, hold: int, dirs: set[str], btns: set[str]) -> None:
-        self._queue.put({"type": "update", **format_entry(hold, dirs, btns)})
+    async def send_device_input_to_queue(self):
+        gamepad = GamepadReader.from_device_name(self.device_name)
+        poller = GamepadPoller(
+            gamepad, lambda x: send_holded_buttons_sync(self._queue, x)
+        )
 
-    def on_frame(self, hold: int, dirs: set[str], btns: set[str]) -> None:
-        self._queue.put({"type": "frame", **format_entry(hold, dirs, btns)})
+        try:
+            async with asyncio.TaskGroup() as tg:
+                tg.create_task(gamepad.async_read_buttons())
+                tg.create_task(poller.run())
+        except* asyncio.CancelledError:
+            logger.info("tasks are cancelled")
+            raise asyncio.CancelledError
+
+    def read_and_draw(self, inputlog_saver: InputLogSaver | None = None) -> None:
+        if not self._queue.empty():
+            # get holded buttons from _queue
+            holded_buttons: GamepadHoldedButtons = self._queue.get_nowait()
+
+            f_holded_buttons = format_holded_buttons(holded_buttons)
+
+            # store formatted holded buttons.
+            self.history.appendleft(f_holded_buttons)
+            # update all lines with updated self.history
+            for i, entry in enumerate(self.history):
+                dpg.set_value(f"hist_{i}_hold", f"{entry.hold_frame:>4}")
+                dpg.set_value(f"hist_{i}_arrow", f" {entry.arrow} ")
+                dpg.set_value(f"hist_{i}_btns", f"{entry.btns}")
+            for i in range(len(self.history), self.history_size):
+                dpg.set_value(f"hist_{i}_hold", "    ")
+                dpg.set_value(f"hist_{i}_arrow", "   ")
+                dpg.set_value(f"hist_{i}_btns", "")
+            if inputlog_saver:
+                inputlog_saver.input(holded_buttons)
 
     def create_window(self) -> None:
         dpg.create_context()
@@ -77,52 +118,37 @@ class GUIOutputter:
         dpg.set_primary_window("main_window", True)
         dpg.show_viewport()
 
-    def start(self, logfile: Path | None = None) -> None:
+    def start(self) -> None:
         """
         starts gui
         """
 
         self.create_window()
 
-        #  -------- run event_reader() and poll_loop in another loop --------------------
-        def asyncio_thread():
-            asyncio.run(
-                run(
-                    device_name=self.device_name,
-                    on_frame=self.on_frame,
-                    on_update=self.on_update,
-                    logfile=logfile,
-                )
-            )
+        def async_thread() -> None:
+            asyncio.run(self.send_device_input_to_queue())
 
-        t = threading.Thread(target=asyncio_thread, daemon=True)
+        # loop in another thread: read device and send its input to queue. When GUI ends, this thread ends.
+        t = threading.Thread(target=async_thread, daemon=True)
         t.start()
+
+        # create inputlog saver, used in GUI loop
+        inputlog_saver = (
+            InputLogSaver(self.inputlog_path) if self.inputlog_path else None
+        )
 
         # Change status label when the event_reader() and poll_loop starts to run
         dpg.set_value("status", f"{self.device_name}")
 
         #  -------- GUI loop ------------------------------------------------------------
-
+        logger.debug("gui starts.")
         while dpg.is_dearpygui_running():
-            while not self._queue.empty():
-                msg = self._queue.get_nowait()
-
-                if msg["type"] == "frame":
-                    dpg.set_value("live_hold", f"{msg['hold']:>4}")
-                    dpg.set_value("live_arrow", msg["arrow"])
-                    dpg.set_value("live_btns", " ".join(sorted(msg["btns"])))
-
-                elif msg["type"] == "update":
-                    self.history.appendleft(msg)
-                    for i, entry in enumerate(self.history):
-                        dpg.set_value(f"hist_{i}_hold", f"{entry['hold']:>4}")
-                        dpg.set_value(f"hist_{i}_arrow", f"  {entry['arrow']}  ")
-                        dpg.set_value(f"hist_{i}_btns", " ".join(entry["btns"]))
-                    for i in range(len(self.history), self.history_size):
-                        dpg.set_value(f"hist_{i}_hold", "    ")
-                        dpg.set_value(f"hist_{i}_arrow", "   ")
-                        dpg.set_value(f"hist_{i}_btns", "")
-
+            self.read_and_draw(inputlog_saver=inputlog_saver)
             dpg.render_dearpygui_frame()
 
+        # when gui ends, write inputlog to file
+        if inputlog_saver:
+            inputlog_saver.save_to_file()
+
+        logger.debug("gui exited.")
         dpg.destroy_context()

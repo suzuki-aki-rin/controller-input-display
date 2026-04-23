@@ -42,8 +42,6 @@ options:
   --outputter {terminal,browser,gui}
                         (default: terminal)
   --history_size int    (default: 30)
-  --enable_liveline bool
-                        (default: False)
   --inputlog_path Path  (default: None)
   --write_default_config bool
                         if True(true in toml), outputs default_config.toml and

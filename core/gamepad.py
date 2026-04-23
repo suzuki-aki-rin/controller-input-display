@@ -72,8 +72,8 @@ def show_device_capabilities(device: InputDevice, verbose: bool = False) -> None
 #  =====================================================================
 @dataclass
 class GamepadPressedButtons:
-    dirs: set[str]  # e.g., {"left", "right"}
-    btns: set[str]
+    dirs: set[str]  # e.g., {"LEFT", "DOWN"}
+    btns: set[str]  # e.g., {"X", "Y"}
 
 
 class GamepadReader:

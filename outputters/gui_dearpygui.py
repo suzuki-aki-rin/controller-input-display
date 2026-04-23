@@ -3,13 +3,11 @@ import threading
 from collections import deque
 from queue import Queue
 from pathlib import Path
-from dataclasses import dataclass, astuple
 
 
 import dearpygui.dearpygui as dpg
 
 from core.config_loader import GuiConfig
-from core.constants import NUMPAD, ARROW
 
 from core.gamepad import GamepadReader
 from core.pollers import GamepadPoller, GamepadHoldedButtons, send_holded_buttons_sync

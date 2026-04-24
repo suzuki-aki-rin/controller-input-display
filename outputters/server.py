@@ -3,9 +3,11 @@ import json
 
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, WebSocket, Request
+from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from core.gamepad import GamepadReader
+from core.gamepad_manager import GamepadManager
 from core.pollers import GamepadPoller, GamepadHoldedButtons, send_holded_buttons_async
 from core.inputlog_saver import InputLogSaver
 from core.constants import NUMPAD, ARROW
@@ -26,7 +28,7 @@ def format_payload(pressed_buttons: GamepadHoldedButtons) -> dict:
     numpad = NUMPAD.get(frozenset(pressed_buttons.dirs), "5")
     arrow = ARROW[numpad]
     return {
-        # "type": "update",
+        "type": "update",
         "hold": pressed_buttons.hold_frame,
         "arrow": arrow,
         "btns": sorted(pressed_buttons.btns),
@@ -45,6 +47,7 @@ class MyWebSocketDisconnected(Exception):
 
 # Queue where update events are put; WebSockets will watch it
 queue = asyncio.Queue()
+queue_2p = asyncio.Queue()
 pressed_buttons = GamepadHoldedButtons(dirs=set(), btns=set(), hold_frame=0)
 templates = Jinja2Templates(directory="outputters/templates")
 inputlog_saver: InputLogSaver | None = None
@@ -58,20 +61,25 @@ inputlog_saver: InputLogSaver | None = None
 async def lifespan(app: FastAPI):
     app.state.state = pressed_buttons
     app.state.queue = queue
+    app.state.queue_2p = queue_2p
     app.state.active_websockets = []  # ✅ track connected websockets
 
-    gamepad = GamepadReader.from_device_name(app.state.device)
-    poller = GamepadPoller(gamepad, lambda x: send_holded_buttons_async(queue, x))
+    # gamepad = GamepadReader.from_device_name(app.state.device)
+    # poller = GamepadPoller(kgamepad, lambda x: send_holded_buttons_async(queue, x))
+    gp_1p_manager = GamepadManager(app.state.device, queue)
 
-    task_1 = asyncio.create_task(gamepad.async_read_buttons())
-    task_2 = asyncio.create_task(poller.run())
+    task = asyncio.create_task(gp_1p_manager.start())
+    # task = asyncio.create_task(poller.run_with_reader())
+    # task_1 = asyncio.create_task(gamepad.async_read_buttons())
+    # task_2 = asyncio.create_task(poller.run())
 
     # try:
     yield
     # finally:  # ✅ finally always runs, even if cancelled
     logger.debug("lifespan finally block")
-    task_1.cancel()
-    task_2.cancel()
+    task.cancel()
+    # task_1.cancel()
+    # task_2.cancel()
     logger.debug("cleanup done")
 
 
@@ -83,9 +91,14 @@ app = FastAPI(lifespan=lifespan)
 
 
 @app.get("/")
-async def index(request: Request):
+async def index():
+    return RedirectResponse(url="/pad1")
+
+
+@app.get("/pad{num}")
+async def pad(request: Request, num: int):
     # Send main loop variables, history_size and server url(changed to ws_url) to html template
-    ws_url = str(request.base_url).replace("http", "ws", 1) + "ws"
+    ws_url = str(request.base_url).replace("http", "ws", 1) + "ws/pad" + str(num)
     # ws_url = f"http://{app.state.host}:{app.state.port}/ws"
     logger.debug(ws_url)
     history_size = app.state.history_size
@@ -93,12 +106,20 @@ async def index(request: Request):
     return templates.TemplateResponse(
         request=request,
         name="index.html",
-        context={"ws_url": ws_url, "history_size": history_size},
+        context={
+            "ws_url": ws_url,
+            "history_size": history_size,
+            "pad": "pad" + str(num),
+        },
     )
 
 
-@app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
+# @app.websocket("/ws")
+# async def websocket_endpoint(websocket: WebSocket):
+
+
+@app.websocket("/ws/pad{num}")
+async def pad_ws(websocket: WebSocket, num: str):
     #  -------- task functions -----------------------------------------------------------
 
     async def wait_for_disconnect():
@@ -116,12 +137,17 @@ async def websocket_endpoint(websocket: WebSocket):
     async def get_queue_and_send_to_ws():
         try:
             while True:
-                # try:
                 holded_buttons = await app.state.queue.get()
-                # except asyncio.CancelledError:
-                # logger.debug("queue.get cancelled")
-                # break  # ✅ break loop, don't re-raise here
+
+                # send gamepad state(running, cable connected) to browser
+                if isinstance(holded_buttons, dict):
+                    await websocket.send_text(json.dumps(holded_buttons))
+                    continue
+
+                # format GamepadHoldedButtons object into dict
                 holded_buttons_dict = format_payload(holded_buttons)
+
+                # send holded buttons state to browser
                 await websocket.send_text(json.dumps(holded_buttons_dict))
                 # save logs
                 if inputlog_saver:

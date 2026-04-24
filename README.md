@@ -22,10 +22,8 @@ pip install dearpygui
 
 ```bash
 $python main.py --help
-usage: main.py [-h] [--log_level str] [--device_name str]
-               [--outputter {terminal,browser,gui}] [--history_size int]
-               [--enable_liveline bool] [--inputlog_path Path]
-               [--write_default_config bool]
+usage: main.py [-h] [--log_level str] [--device_name str] [--device2_name str] [--outputter {terminal,browser,gui}] [--history_size int]
+               [--inputlog_path Path] [--write_default_config bool]
 
 Displays pad input history. three outputters are available.
 Settings except for the commandline options is written in config.toml.
@@ -33,20 +31,18 @@ If no config.toml, create defaults.toml via --write_default_config=True option
 and modfiy it.
 
 gui font_path in defaults.toml is possibly not valid. Is so, modify it in config.toml.
-check device name by using evtest or something.
 
 options:
   -h, --help            show this help message and exit
   --log_level str       (default: info)
   --device_name str     (default: Microsoft X-Box 360 pad)
+  --device2_name str    (default: None)
   --outputter {terminal,browser,gui}
                         (default: terminal)
   --history_size int    (default: 30)
   --inputlog_path Path  (default: None)
   --write_default_config bool
-                        if True(true in toml), outputs default_config.toml and
-                        app ends. (default: False)
-
+                        if True(true in toml), outputs default_config.toml and app ends. (default: False)
 ```
 
 ```bash

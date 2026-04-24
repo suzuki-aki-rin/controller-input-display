@@ -44,18 +44,22 @@ def main():
             history_size=app_config.history_size,
             inputlog_path=app_config.inputlog_path,
         )
-        # on_update = terminal_outputter.on_update
-        # on_frame = terminal_outputter.on_frame
-        terminal_outputter.reserve_display()
+
         try:
             asyncio.run(terminal_outputter.run())
         except KeyboardInterrupt:
             logger.info("app exited by KeyboardInterrupt")
             raise SystemExit
+        except OSError:
+            logger.error(
+                "app exited. Device is disconnected: %s", app_config.device_name
+            )
+            raise SystemExit
 
     elif app_config.outputter == "browser":
         browser_config = app_config.outputters.browser
 
+        # assign values to FastAPI app
         app_for_browser.state.host = browser_config.host
         app_for_browser.state.port = browser_config.port
         app_for_browser.state.device = app_config.device_name

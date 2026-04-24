@@ -54,6 +54,9 @@ class GUIOutputter:
         except* asyncio.CancelledError:
             logger.info("tasks are cancelled")
             raise asyncio.CancelledError
+        except* OSError:
+            logger.error("Device is disconnected")
+            raise OSError
 
     def read_and_draw(self, inputlog_saver: InputLogSaver | None = None) -> None:
         if not self._queue.empty():
@@ -124,7 +127,11 @@ class GUIOutputter:
         self.create_window()
 
         def async_thread() -> None:
-            asyncio.run(self.send_device_input_to_queue())
+            try:
+                asyncio.run(self.send_device_input_to_queue())
+            except OSError:
+                logger.error("device is disconnected.")
+                # No re-raise. then thread ends.
 
         # loop in another thread: read device and send its input to queue. When GUI ends, this thread ends.
         t = threading.Thread(target=async_thread, daemon=True)

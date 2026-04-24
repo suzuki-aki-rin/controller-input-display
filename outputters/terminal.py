@@ -61,6 +61,9 @@ class TerminalOutputter:
             InputLogSaver(self.inputlog_path) if self.inputlog_path else None
         )
 
+        # Before input display, fill display space with blank lines
+        self.reserve_display()
+
         async def read_and_draw() -> None:
             try:
                 while True:
@@ -82,6 +85,9 @@ class TerminalOutputter:
         except* asyncio.CancelledError:
             logger.info("tasks are cancelled")
             raise asyncio.CancelledError
+        except* OSError:
+            logger.error("Device is disconnected")
+            raise OSError
         finally:
             # save input history to file when terminal outputter is cancelled
             if inputlog_saver:

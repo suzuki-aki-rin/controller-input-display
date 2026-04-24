@@ -44,6 +44,15 @@ def get_gamepad_manager(num: int) -> GamepadManager:
         raise ValueError("bad number: %s. use 1 or 2" % num)
 
 
+def get_queue(num: int) -> asyncio.Queue:
+    if num == 1:
+        return app.state.queue
+    if num == 2:
+        return app.state.queue_2p
+    else:
+        raise ValueError("bad number: %s. use 1 or 2" % num)
+
+
 # custom exception to cancel taskgroup
 class MyWebSocketDisconnected(Exception):
     pass
@@ -78,7 +87,7 @@ async def lifespan(app: FastAPI):
     pad1_gp_mgr = GamepadManager(app.state.device, queue)
     app.state.pad1_mgr = pad1_gp_mgr
     if app.state.device2:
-        pad2_gp_mgr = GamepadManager(app.state.device2, queue)
+        pad2_gp_mgr = GamepadManager(app.state.device2, queue_2p)
         app.state.pad2_mgr = pad2_gp_mgr
 
     # task = asyncio.create_task(gp_1p_manager.start())
@@ -118,6 +127,8 @@ async def pad(request: Request, num: int):
     logger.debug(ws_url)
     history_size = app.state.history_size
 
+    gp_mgr = get_gamepad_manager(num)
+
     return templates.TemplateResponse(
         request=request,
         name="index.html",
@@ -125,6 +136,7 @@ async def pad(request: Request, num: int):
             "ws_url": ws_url,
             "history_size": history_size,
             "pad": "pad" + str(num),
+            "dev_name": gp_mgr.device_name,
         },
     )
 
@@ -132,6 +144,7 @@ async def pad(request: Request, num: int):
 @app.post("/pad{num}/{button}")
 async def start_pressed(num: int, button: str):
     gp_mgr = get_gamepad_manager(num)
+    logger.debug(gp_mgr.device_name)
 
     if button == "stop":
         await gp_mgr.stop()
@@ -163,9 +176,10 @@ async def pad_ws(websocket: WebSocket, num: int):
         raise MyWebSocketDisconnected
 
     async def get_queue_and_send_to_ws():
+        _queue = get_queue(num)
         try:
             while True:
-                holded_buttons = await app.state.queue.get()
+                holded_buttons = await _queue.get()
 
                 # send gamepad state(running, cable connected) to browser
                 if isinstance(holded_buttons, dict):
@@ -180,7 +194,7 @@ async def pad_ws(websocket: WebSocket, num: int):
                 # save logs
                 if inputlog_saver:
                     inputlog_saver.input(holded_buttons)
-                logger.debug("input is sent to browser via websocket")
+                # logger.debug("input is sent to browser via websocket")
         except asyncio.CancelledError:
             logger.debug("get_queue_and_send_to_ws in websocket endpoint is canceled")
             raise

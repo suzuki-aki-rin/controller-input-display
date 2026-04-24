@@ -1,3 +1,4 @@
+device2_name = "GameSir"
 [outputters.browser]
 host = "localhost"
 port = 8100

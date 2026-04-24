@@ -45,25 +45,25 @@ def make_holded_buttons(
 
 
 async def send_holded_buttons_async(
-    queue: asyncio.Queue, holded_buttons: GamepadHoldedButtons
+    _queue: asyncio.Queue, holded_buttons: GamepadHoldedButtons
 ):
     """sends holded buttons by asyncio.Queue. For FastAPI or something. assign to GamepadReader by using lambda.
 
     Usage:
         GamepadPoller(..., _send_hold_button_to_queue = lambda btns:send_holded_buttons_async(queue, btns)
     """
-    await queue.put(holded_buttons)
+    await _queue.put(holded_buttons)
 
 
 async def send_holded_buttons_sync(
-    queue: queue.Queue, holded_buttons: GamepadHoldedButtons
+    _queue: queue.Queue, holded_buttons: GamepadHoldedButtons
 ):
     """sends holded buttons by queue.Queue. For GUI app. assign to GamepadReader by using lambda.
 
     Usage:
         GamepadPoller(..., _send_hold_button_to_queue = lambda btns:send_holded_buttons_sync(queue, btns)
     """
-    queue.put(holded_buttons)
+    _queue.put(holded_buttons)
 
 
 #  =====================================================================

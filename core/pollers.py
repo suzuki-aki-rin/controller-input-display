@@ -72,6 +72,12 @@ async def send_holded_buttons_sync(
 
 
 class GamepadPoller:
+    """Polls gamepad input per 1/60sec
+
+    use send_holded_buttons_async or ..._sync for _send_hold_button_to_queue
+    ex. GamepadPoller(..., _send_hold_button_to_queue = lambda btns:send_holded_buttons_sync(queue, btns)
+    """
+
     def __init__(
         self,
         gamepad: GamepadReader,
@@ -134,6 +140,16 @@ class GamepadPoller:
             logger.debug("GamepadPoller run() is cancelled.")
             raise
 
+    async def run_with_reader(self):
+        try:
+            async with asyncio.TaskGroup() as tg:
+                tg.create_task(self.gamepad.async_read_buttons())
+                tg.create_task(self.run())
+        except asyncio.CancelledError:
+            logger.info("canelled")
+        except OSError:
+            logger.error("disconnected")
+
 
 async def main():
     #  =====================================================================
@@ -162,8 +178,9 @@ async def main():
 
     try:
         async with asyncio.TaskGroup() as tg:
-            tg.create_task(gamepad.async_read_buttons())
-            tg.create_task(poller.run())
+            # tg.create_task(gamepad.async_read_buttons())
+            # tg.create_task(poller.run())
+            tg.create_task(poller.run_with_reader())
             tg.create_task(read_queue())
     except* asyncio.CancelledError:
         logger.error("cancellederror")
@@ -177,4 +194,6 @@ if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        logging.info("exit.")
+        logging.info("KeyboardInterrupt. exit.")
+    except OSError:
+        logging.info("Disconnected. exit.")

@@ -168,6 +168,9 @@ async def main():
     except* asyncio.CancelledError:
         logger.error("cancellederror")
         raise asyncio.CancelledError
+    except* OSError:
+        logger.error("disconnected")
+        raise OSError
 
 
 if __name__ == "__main__":

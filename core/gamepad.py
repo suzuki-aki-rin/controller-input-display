@@ -93,7 +93,7 @@ class GamepadReader:
     def from_device_name(cls, device_name: str) -> Self:
         device = find_device(device_name)
         if not device:
-            raise SystemExit("no device. name: %s", device_name)
+            raise SystemExit("no device. name: %s" % device_name)
         return cls(device)
 
     async def async_read_buttons(self):
@@ -107,6 +107,9 @@ class GamepadReader:
         except CancelledError:
             logger.debug("event_reader is cancelled")
             raise
+        except OSError:
+            logger.error("Controller disconnected")
+            raise
 
     def read_buttons(self):
         # get reference to avoid self reference in loop for a slightly good performance.
@@ -118,6 +121,9 @@ class GamepadReader:
                 update(event)
         except KeyboardInterrupt:
             logger.debug("KeyboardInterrupt: event_reader is cancelled.")
+            raise
+        except OSError:
+            logger.error("Controller disconnected")
             raise
 
     def update(self, event):

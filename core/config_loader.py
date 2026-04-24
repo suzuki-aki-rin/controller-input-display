@@ -99,6 +99,7 @@ class AppConfig(BaseSettings):
 
     log_level: str = "info"
     device_name: str = "Microsoft X-Box 360 pad"
+    device2_name: str | None = None
     outputter: Literal["terminal", "browser", "gui"] = "terminal"
     history_size: int = 30
     # enable_liveline: bool = False

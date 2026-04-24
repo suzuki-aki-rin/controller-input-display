@@ -66,7 +66,11 @@ async def lifespan(app: FastAPI):
 
     # gamepad = GamepadReader.from_device_name(app.state.device)
     # poller = GamepadPoller(kgamepad, lambda x: send_holded_buttons_async(queue, x))
-    gp_1p_manager = GamepadManager(app.state.device, queue)
+    pad1_gp_mgr = GamepadManager(app.state.device, queue)
+    app.state.pad1_mgr = pad1_gp_mgr
+    if app.state.device2:
+        pad2_gp_mgr = GamepadManager(app.state.device2, queue)
+        app.state.pad2_mgr = pad2_gp_mgr
 
     task = asyncio.create_task(gp_1p_manager.start())
     # task = asyncio.create_task(poller.run_with_reader())

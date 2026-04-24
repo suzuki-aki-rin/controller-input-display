@@ -59,6 +59,7 @@ def main():
         app_for_browser.state.host = browser_config.host
         app_for_browser.state.port = browser_config.port
         app_for_browser.state.device = app_config.device_name
+        app_for_browser.state.device2 = app_config.device2_name
         app_for_browser.state.history_size = app_config.history_size
         app_for_browser.state.inputlog_path = app_config.inputlog_path
 
@@ -68,7 +69,6 @@ def main():
                 host=browser_config.host,
                 port=browser_config.port,
                 reload=False,
-                timeout_graceful_shutdown=2,
             )
         logger.info("browser outputter stopped or did not start.")
         return

@@ -69,14 +69,23 @@
 </head>
 <body>
 
-<div class="entry live" id="live">
-  <div class="frames" id="live-frames">0</div>
-  <div class="arrow" id="live-arrow">·</div>
-  <div class="btns" id="live-btns"></div>
-</div>
+<!-- <div class="entry live" id="live"> -->
+<!--   <div class="frames" id="live-frames">0</div> -->
+<!--   <div class="arrow" id="live-arrow">·</div> -->
+<!--   <div class="btns" id="live-btns"></div> -->
+<!-- </div> -->
 
+<div class="status" id="status">
+  <div class="ws" id="ws-status">connecting ... </div>
+  <div class="app" id="app-status">App false</div>
+  <div class="cable" id="cable-status">cable false</div>
+</div>
+<div class="control" id="control">
+      <div class="pad" id="pad">{{ pad }}</div>
+      <button onclick="pressStart()">Start</button>
+      <button onclick="pressStop()">Stop</button>
+</div>
 <div id="history"></div>
-<div class="status" id="status">connecting...</div>
 
 <script>
 const HISTORY_SIZE = {{ history_size }};
@@ -97,19 +106,32 @@ function renderHistory() {
   ).join('');
 }
 
+function pressStart(){
+  fetch("/{{ pad }}/start", { method: "POST" })
+}
+
+function pressStop(){
+  fetch("/{{ pad }}/stop", { method: "POST" })
+}
+
 const ws = new WebSocket("{{ ws_url }}");
 console.log(ws.name);
 
 ws.onopen = () => {
-  document.getElementById('status').textContent = 'connected';
+  document.getElementById('ws-status').textContent = 'connected';
 };
 
 ws.onclose = () => {
-  document.getElementById('status').textContent = 'disconnected';
+  document.getElementById('ws-status').textContent = 'disconnected';
 };
 
 ws.onmessage = (e) => {
   const data = JSON.parse(e.data);
+  if (data.type === 'status') {
+    document.getElementById('app-status').textContent = `App ${data.is_running}`
+    document.getElementById('cable-status').textContent = `cable ${data.is_connected}`
+
+  }else{
 
   // if (data.type === 'frame') {
   //   document.getElementById('live-frames').textContent = data.hold;
@@ -118,7 +140,7 @@ ws.onmessage = (e) => {
   // } else if (data.type === 'update') {
     history.unshift(data);
     renderHistory();
-  // }
+  }
 };
 </script>
 </body>

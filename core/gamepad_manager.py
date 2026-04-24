@@ -25,29 +25,23 @@ class GamepadManager:
     def is_connected(self) -> bool:
         return find_device(self.device_name) is not None
 
-    async def notify_state(self, is_running: bool, is_connected: bool) -> None:
+    async def notify_status(self, is_running: bool, is_connected: bool) -> None:
         await self._queue.put(
             {"type": "status", "is_running": is_running, "is_connected": is_connected}
         )
 
     async def start_task(self):
-        if self.is_running:
-            logger.error("already running: %s", self.device_name)
-            return
         if not self.is_connected():
             logger.error("device is disconneted: %s", self.device_name)
             return
-
-        try:
+        else:
             self.gamepad = GamepadReader.from_device_name(self.device_name)
-        except OSError:
-            logger.error("device not found: %s", self.device_name)
-            return
 
         self.poller = GamepadPoller(
             self.gamepad, lambda btns: send_holded_buttons_async(self._queue, btns)
         )
         self.is_running = True
+
         try:
             async with asyncio.TaskGroup() as tg:
                 tg.create_task(self.poller.run_with_reader())
@@ -61,9 +55,15 @@ class GamepadManager:
             self.is_running = False
             self.gamepad = None
             self.poller = None
-            await self.notify_state(self.is_running, False)
+            await self.notify_status(
+                is_running=self.is_running, is_connected=self.is_connected()
+            )
 
     async def start(self):
+        if self.is_running:
+            logger.error("already running: %s", self.device_name)
+            return
+
         self.task = asyncio.create_task(self.start_task())
         logger.debug("%s started", self.device_name)
 

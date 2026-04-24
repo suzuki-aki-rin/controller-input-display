@@ -35,6 +35,15 @@ def format_payload(pressed_buttons: GamepadHoldedButtons) -> dict:
     }
 
 
+def get_gamepad_manager(num: int) -> GamepadManager:
+    if num == 1:
+        return app.state.pad1_mgr
+    if num == 2:
+        return app.state.pad2_mgr
+    else:
+        raise ValueError("bad number: %s. use 1 or 2" % num)
+
+
 # custom exception to cancel taskgroup
 class MyWebSocketDisconnected(Exception):
     pass
@@ -72,7 +81,7 @@ async def lifespan(app: FastAPI):
         pad2_gp_mgr = GamepadManager(app.state.device2, queue)
         app.state.pad2_mgr = pad2_gp_mgr
 
-    task = asyncio.create_task(gp_1p_manager.start())
+    # task = asyncio.create_task(gp_1p_manager.start())
     # task = asyncio.create_task(poller.run_with_reader())
     # task_1 = asyncio.create_task(gamepad.async_read_buttons())
     # task_2 = asyncio.create_task(poller.run())
@@ -81,7 +90,7 @@ async def lifespan(app: FastAPI):
     yield
     # finally:  # ✅ finally always runs, even if cancelled
     logger.debug("lifespan finally block")
-    task.cancel()
+    # task.cancel()
     # task_1.cancel()
     # task_2.cancel()
     logger.debug("cleanup done")
@@ -101,6 +110,8 @@ async def index():
 
 @app.get("/pad{num}")
 async def pad(request: Request, num: int):
+    if num not in (1, 2):
+        return f"bad pad number: {num}. input 1 or 2"
     # Send main loop variables, history_size and server url(changed to ws_url) to html template
     ws_url = str(request.base_url).replace("http", "ws", 1) + "ws/pad" + str(num)
     # ws_url = f"http://{app.state.host}:{app.state.port}/ws"
@@ -118,12 +129,25 @@ async def pad(request: Request, num: int):
     )
 
 
-# @app.websocket("/ws")
-# async def websocket_endpoint(websocket: WebSocket):
+@app.post("/pad{num}/{button}")
+async def start_pressed(num: int, button: str):
+    gp_mgr = get_gamepad_manager(num)
+
+    if button == "stop":
+        await gp_mgr.stop()
+    elif button == "start":
+        await gp_mgr.start()
+    else:
+        return {"message": "bad button"}
+
+
+#  =====================================================================
+#            websocket endpoint
+#  =====================================================================
 
 
 @app.websocket("/ws/pad{num}")
-async def pad_ws(websocket: WebSocket, num: str):
+async def pad_ws(websocket: WebSocket, num: int):
     #  -------- task functions -----------------------------------------------------------
 
     async def wait_for_disconnect():
@@ -170,9 +194,16 @@ async def pad_ws(websocket: WebSocket, num: str):
     inputlog_saver = (
         InputLogSaver(app.state.inputlog_path) if app.state.inputlog_path else None
     )
+
     await websocket.accept()
     # app.state.active_websockets.append(websocket)  # ✅ register
     logger.debug("websocket is connected")
+
+    gp_mgr = get_gamepad_manager(num)
+    # nofify status before starts
+    await gp_mgr.notify_status(
+        is_running=gp_mgr.is_running, is_connected=gp_mgr.is_connected()
+    )
 
     try:
         async with asyncio.TaskGroup() as tg:

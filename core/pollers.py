@@ -86,6 +86,7 @@ class GamepadPoller:
         self.gamepad = gamepad
         self.curr_pressed_buttons = gamepad.pressed_buttons
         self.prev_pressed_buttons = GamepadPressedButtons(dirs=set(), btns=set())
+        self.hold_frame: int = 0
 
         self._hold_buttons_sender = _send_hold_button_to_queue
 
@@ -102,7 +103,7 @@ class GamepadPoller:
         self.prev_pressed_buttons = copy_pressed_buttons(self.curr_pressed_buttons)
 
         next_tick = asyncio.get_event_loop().time()
-        hold_frame: int = 1
+        self.hold_frame: int = 1
         # to save state temporaly
         temp_prev_pressed_buttons: GamepadPressedButtons
 
@@ -124,7 +125,7 @@ class GamepadPoller:
 
                     # send holded buttons that has pressed buttons and their hold frame to on_update
                     holded_buttons = make_holded_buttons(
-                        self.prev_pressed_buttons, hold_frame
+                        self.prev_pressed_buttons, self.hold_frame
                     )
 
                     # send holded button to on_update assigned at class construction.
@@ -132,10 +133,10 @@ class GamepadPoller:
 
                     # update prev_pressed_buttons with stored curr_pressed_button above and reset hold_frame
                     self.prev_pressed_buttons = temp_prev_pressed_buttons
-                    hold_frame = 1
+                    self.hold_frame = 1
                 else:
                     # increment hold_frame
-                    hold_frame += 1
+                    self.hold_frame += 1
         except asyncio.CancelledError:
             logger.debug("GamepadPoller run() is cancelled.")
             raise
@@ -145,10 +146,21 @@ class GamepadPoller:
             async with asyncio.TaskGroup() as tg:
                 tg.create_task(self.gamepad.async_read_buttons())
                 tg.create_task(self.run())
-        except asyncio.CancelledError:
-            logger.info("canelled")
-        except OSError:
-            logger.error("disconnected")
+        except* asyncio.CancelledError:
+            logger.info("Reader and Poller are canelled")
+            raise asyncio.CancelledError
+        except* OSError:
+            # send the last holded buttons
+            holded_buttons = make_holded_buttons(
+                self.prev_pressed_buttons, self.hold_frame
+            )
+            await self._hold_buttons_sender(holded_buttons)
+            # And send emtpy holdedbutton as stop signal
+            await self._hold_buttons_sender(
+                GamepadHoldedButtons(dirs=set(), btns=set(), hold_frame=0)
+            )
+            logger.error("Reader and Poller ends: device disconnected")
+            raise OSError
 
 
 async def main():

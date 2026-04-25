@@ -123,14 +123,19 @@ class GUIOutputter:
         """
         starts gui
         """
-
         self.create_window()
 
+        is_button_reader_running: bool = False
+
         def async_thread() -> None:
+            nonlocal is_button_reader_running
+            is_button_reader_running = True
             try:
                 asyncio.run(self.send_device_input_to_queue())
             except OSError:
-                logger.error("device is disconnected.")
+                logger.error("button reader thread ends: device is disconnected.")
+            finally:
+                is_button_reader_running = False
                 # No re-raise. then thread ends.
 
         # loop in another thread: read device and send its input to queue. When GUI ends, this thread ends.
@@ -147,13 +152,15 @@ class GUIOutputter:
 
         #  -------- GUI loop ------------------------------------------------------------
         logger.debug("gui starts.")
-        while dpg.is_dearpygui_running():
+        while dpg.is_dearpygui_running() and is_button_reader_running:
             self.read_and_draw(inputlog_saver=inputlog_saver)
             dpg.render_dearpygui_frame()
 
         # when gui ends, write inputlog to file
         if inputlog_saver:
             inputlog_saver.save_to_file()
+            logger.info("input history is saved at: %s", str(inputlog_saver.file_path))
 
         logger.debug("gui exited.")
+        logger.info("app exited. GUI loop is stopped.")
         dpg.destroy_context()

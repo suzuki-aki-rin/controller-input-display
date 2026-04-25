@@ -79,14 +79,12 @@ class TerminalOutputter:
 
         try:
             async with asyncio.TaskGroup() as tg:
-                tg.create_task(gamepad.async_read_buttons())
-                tg.create_task(poller.run())
+                tg.create_task(poller.run_with_reader())
                 tg.create_task(read_and_draw())
         except* asyncio.CancelledError:
-            logger.info("tasks are cancelled")
+            logger.info("terminal outputter cancelled")
             raise asyncio.CancelledError
         except* OSError:
-            logger.error("Device is disconnected")
             raise OSError
         finally:
             # save input history to file when terminal outputter is cancelled
